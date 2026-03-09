@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SLA Tracker · Equipo Diseño</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff; --surface: #8a0fa5; --card: #6a0980; --border: rgba(246,191,74,0.25);
+    --accent: #f6bf4a; --accent2: #fff0c0; --text: #fff8ee; --muted: rgba(255,240,200,0.55);
+    --danger: #ff8fa3; --green: #7fffc4; --orange: #ffd580; --purple: #e0b0ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: #2a0035; font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(117,10,139,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(117,10,139,0.05) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; flex-wrap: wrap; gap: 16px; }
+  .logo { display: flex; align-items: center; }
+  .logo-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; color: #E35376; font-family: 'Syne', sans-serif; line-height: 1; }
+  .logo-sub { font-size: 11px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .date-display { font-family: 'DM Mono', monospace; font-size: 13px; color: #750a8b; text-align: right; }
+  .date-display span { display: block; color: #2a0035; font-size: 15px; font-weight: 500; }
+  .sync-status { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 11px; color: #750a8b; padding: 6px 12px; background: #f5f0ff; border: 1px solid rgba(117,10,139,0.2); border-radius: 20px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .sync-dot.synced { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .sync-dot.syncing { background: var(--orange); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 5px; margin-bottom: 24px; width: fit-content; flex-wrap: wrap; }
+  .tab { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .tab.active { background: #E35376; color: #fff; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
+  /* User bar */
+  .user-bar { background: #ffffff; border: 3px solid #750a8b; border-radius: 12px; padding: 14px 20px; margin-bottom: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .user-bar label { font-size: 11px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .designer-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .designer-pill { font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid #E35376; background: #E35376; color: #fff; cursor: pointer; transition: all 0.15s; }
+  .designer-pill:hover { border-color: #c2275e; background: #c2275e; color: #fff; }
+  .designer-pill.active { background: #750a8b; border-color: #750a8b; color: #fff; font-weight: 600; }
+
+  /* Form */
+  .section-label { font-size: 10px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .task-form { background: #ffffff; border: 3px solid #750a8b; border-radius: 16px; padding: 24px; margin-bottom: 22px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  @media(max-width:700px){.form-grid{grid-template-columns:1fr;}}
+  .field label { display: block; font-size: 10px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .field input { width: 100%; background: #ffffff; border: 1px solid rgba(117,10,139,0.2); color: #2a0035; font-family: 'Syne', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: #E35376; }
+
+  /* Pills */
+  .pill-selector { display: flex; flex-wrap: wrap; gap: 7px; }
+  .pill { font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; white-space: nowrap; }
+  .pill:hover { border-color: var(--accent); color: var(--text); }
+  .pill.sel-client { background: rgba(246,191,74,0.2); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+  .pill.sel-type { background: rgba(255,255,255,0.15); border-color: var(--accent2); color: var(--accent2); font-weight: 500; }
+
+  /* Ajuste */
+  .ajuste-row { display: flex; align-items: center; gap: 14px; margin: 16px 0; }
+  .ajuste-toggle { position: relative; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+  .ajuste-toggle input { display: none; }
+  .toggle-track { width: 40px; height: 22px; background: #d0b0e0; border-radius: 11px; transition: background 0.2s; position: relative; flex-shrink: 0; border: 1px solid #9b3bb5; }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #750a8b; border-radius: 50%; transition: all 0.2s; }
+  .ajuste-toggle input:checked ~ .toggle-track { background: #E35376; border: 1px solid #c2275e; }
+  .ajuste-toggle input:checked ~ .toggle-track .toggle-thumb { transform: translateX(17px); background: #ffffff; }
+  .ajuste-label { font-size: 13px; font-weight: 600; color: #750a8b; transition: color 0.2s; }
+  .ajuste-toggle input:checked ~ .ajuste-label { color: #E35376; }
+  .badge-ajuste { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 4px; background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); letter-spacing: 1px; text-transform: uppercase; }
+
+  .qty-preset { font-family: 'DM Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; }
+  .qty-preset:hover { border-color: var(--accent); color: var(--text); }
+  .qty-preset.active { background: rgba(227,83,118,0.25); border-color: #E35376; color: #fff; font-weight: 600; }
+  #qty-minus:hover, #qty-plus:hover { border-color: var(--accent); }
+
+  /* Drop row — 3 en línea */
+  .drop-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; position: relative; }
+  @media(max-width:600px){ .drop-row { grid-template-columns: 1fr; } }
+  .drop-block { border: 1px solid var(--border); border-radius: 10px; overflow: visible; transition: border-color 0.2s; position: relative; }
+  .drop-block.open { border-color: #E35376; }
+  .drop-body-float { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 320px; z-index: 50; border-radius: 10px; border: 1px solid #E35376; background: var(--card); padding: 14px 16px; display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .drop-block.open .drop-body-float { display: block; animation: fadeIn 0.15s ease; }
+  .drop-header { width: 100%; background: var(--surface); border: none; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 11px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s; text-align: left; border-radius: 9px; }
+  .drop-header:hover { background: rgba(0,0,0,0.1); }
+  .drop-block.open .drop-header { background: rgba(227,83,118,0.15); }
+  .drop-label { color: #ffffff; font-size: 12px; white-space: nowrap; font-weight: 600; }
+  .drop-block.open .drop-label { color: #f6bf4a; }
+  .drop-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 0; }
+  .drop-val { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+  .drop-block.open .drop-val { color: #f6bf4a; }
+  .drop-arrow { font-size: 11px; color: rgba(255,255,255,0.7); transition: transform 0.2s; flex-shrink: 0; }
+  .drop-block.open .drop-arrow { transform: rotate(90deg); color: #f6bf4a; }
+  .cat-pill, .type-pill { font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; white-space: nowrap; display: inline-block; margin: 3px; }
+  .cat-pill:hover { border-color: var(--accent); color: var(--text); }
+  .cat-pill.active { background: rgba(227,83,118,0.25); border-color: #E35376; color: #fff; font-weight: 500; }
+  .type-pill:hover { border-color: var(--accent2); color: var(--text); }
+  .type-pill.active { background: rgba(227,83,118,0.25); border-color: #E35376; color: #fff; font-weight: 500; }
+  .type-pill.anim-pill { border-color: #E35376; color: #E35376; }
+  .type-pill.anim-pill:hover { background: rgba(227,83,118,0.1); }
+  .type-pill.anim-pill.active { background: #E35376; color: #fff; }
+
+  .form-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
+  .form-selection { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.9; }
+  .btn-start { background: #E35376; color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
+  .btn-start:hover { background: #cc2d5a; transform: translateY(-1px); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Active timer */
+  .active-timer { background: #750a8b; border: 3px solid #E35376; border-radius: 16px; padding: 24px; margin-bottom: 22px; display: none; animation: fadeIn 0.3s ease; }
+  .active-timer.visible { display: block; }
+  .timer-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .timer-task-name { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .timer-meta { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .timer-display { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500; color: var(--accent); letter-spacing: 2px; line-height: 1; }
+  .pulse-dot { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-right: 8px; animation: pulse 1.2s infinite; vertical-align: middle; }
+  .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .btn-stop { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .btn-stop:hover { background: rgba(255,92,92,0.1); }
+  .btn-pause { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+
+  /* Tasks */
+  .tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .task-count { font-family: 'DM Mono', monospace; font-size: 12px; color: #750a8b; margin-top: 4px; }
+  .tasks-list { display: flex; flex-direction: column; gap: 10px; }
+  .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 14px; animation: fadeIn 0.25s ease; }
+  @media(max-width:600px){.task-card{grid-template-columns:1fr;}}
+  .task-card-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .task-card-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  .tag { font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
+  .tag-type { background: rgba(255,255,255,0.12); color: var(--accent2); }
+  .tag-client { background: rgba(246,191,74,0.15); color: var(--accent); }
+  .tag-done { background: rgba(127,255,196,0.15); color: var(--green); }
+
+  /* SLA semáforo */
+  .sla-badge { display: inline-flex; align-items: center; gap: 5px; font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 4px; font-weight: 500; }
+  .sla-green { background: rgba(127,255,196,0.15); color: var(--green); border: 1px solid rgba(127,255,196,0.3); }
+  .sla-yellow { background: rgba(255,170,71,0.12); color: var(--orange); border: 1px solid rgba(255,170,71,0.25); }
+  .sla-red { background: rgba(255,92,92,0.12); color: var(--danger); border: 1px solid rgba(255,92,92,0.25); }
+  .sla-none { background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border); }
+
+  .task-time { font-family: 'DM Mono', monospace; font-size: 19px; font-weight: 500; color: var(--text); white-space: nowrap; text-align: right; }
+  .task-time small { display: block; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  .btn-delete { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 4px 6px; border-radius: 4px; transition: color 0.15s; }
+  .btn-delete:hover { color: var(--danger); }
+
+  /* Summary */
+  .summary { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 22px; display: flex; gap: 28px; flex-wrap: wrap; }
+  .summary-item { display: flex; flex-direction: column; gap: 4px; }
+  .summary-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .summary-value { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; color: var(--accent); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: #750a8b; font-size: 14px; font-family: 'DM Mono', monospace; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* Settings */
+  .settings-card { background: #ffffff; border: 3px solid #750a8b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+  .settings-card h3 { font-size: 15px; font-weight: 700; color: #750a8b; margin-bottom: 6px; }
+  .settings-card p { font-size: 12px; color: #9b3bb5; font-family: 'DM Mono', monospace; margin-bottom: 16px; }
+  .settings-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; max-height: 320px; overflow-y: auto; }
+  .settings-item { display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid rgba(117,10,139,0.15); border-radius: 8px; padding: 9px 14px; }
+  .settings-item span { font-size: 13px; font-weight: 500; color: #2a0035; }
+  .btn-sm { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+  .btn-sm:hover { border-color: var(--danger); color: var(--danger); }
+  .settings-add { display: flex; gap: 10px; }
+  .settings-add input { flex: 1; background: #f9f4ff; border: 1px solid rgba(117,10,139,0.2); color: #2a0035; font-family: 'Syne', sans-serif; font-size: 13px; padding: 9px 14px; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+  .settings-add input:focus { border-color: var(--accent); }
+  .btn-add { background: var(--accent); color: #000; border: none; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .btn-add:hover { background: #d4eb3a; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); z-index: 200; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 320px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+  .toast.warning { border-color: var(--orange); color: var(--orange); }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <img src="data:image/png;base64,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" alt="Making Bulla" style="height:72px;width:72px;border-radius:12px;object-fit:cover;" />
+      <div style="margin-left:12px">
+        <div class="logo-title">SLA TRACKER</div>
+        <div class="logo-sub">Equipo de Diseño · En la nube</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" id="btn-sheet-link" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#750a8b;color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;text-decoration:none;letter-spacing:0.5px;transition:background 0.15s;" onmouseover="this.style.background='#5a0870'" onmouseout="this.style.background='#750a8b'">
+          📊 Ver Excel
+        </a>
+        <div class="sync-status">
+          <span class="sync-dot" id="sync-dot"></span>
+          <span id="sync-text">Conectando...</span>
+        </div>
+      </div>
+      <div class="date-display">
+        <div id="clock" style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace"></div>
+        <span id="today-date"></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('tracker')">⏱ Tracker</button>
+    <button class="tab" onclick="switchTab('clientes')">🏢 Clientes</button>
+    <button class="tab" onclick="switchTab('tipos')">🎨 Tipos</button>
+    <button class="tab" onclick="switchTab('sla')">📋 SLA Ref.</button>
+  </div>
+
+  <!-- TAB TRACKER -->
+  <div class="tab-panel active" id="tab-tracker">
+    <div class="user-bar">
+      <label>👤 DISEÑADOR</label>
+      <div class="designer-pills">
+        <span class="designer-pill">Joel Tapia</span>
+        <span class="designer-pill">Hector Chong</span>
+        <span class="designer-pill">Ana Arriaga</span>
+      </div>
+    </div>
+
+    <div class="task-form">
+      <div class="section-label">+ NUEVA TAREA</div>
+
+      <!-- Nombre -->
+      <div class="field" style="margin-bottom:16px">
+        <label>Nombre de la tarea</label>
+        <input type="text" id="task-name" placeholder="Ej: Banner principal Q2" />
+      </div>
+
+      <!-- Fila de selectores -->
+      <div class="drop-row">
+
+        <!-- Cliente -->
+        <div class="drop-block" id="drop-client">
+          <button type="button" class="drop-header" data-target="drop-client">
+            <span class="drop-label">🏢 Cliente</span>
+            <span class="drop-meta"><span class="drop-val" id="drop-client-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
+          </button>
+          <div class="drop-body drop-body-float">
+            <div class="pill-selector" id="client-pills"></div>
+          </div>
+        </div>
+
+        <!-- Categoría -->
+        <div class="drop-block" id="drop-category">
+          <button type="button" class="drop-header" data-target="drop-category">
+            <span class="drop-label">📂 Categoría</span>
+            <span class="drop-meta"><span class="drop-val" id="drop-category-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
+          </button>
+          <div class="drop-body drop-body-float">
+            <div class="pill-selector">
+              <span class="cat-pill" data-val="Grilla de Contenido">📅 Grilla de Contenido</span>
+              <span class="cat-pill" data-val="Redes Sociales">📱 Redes Sociales</span>
+              <span class="cat-pill" data-val="Proyecto">📁 Proyecto</span>
+              <span class="cat-pill" data-val="Diseño Gráfico General">🎨 Diseño Gráfico General</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tipo -->
+        <div class="drop-block" id="drop-type">
+          <button type="button" class="drop-header" data-target="drop-type">
+            <span class="drop-label">🎨 Tipo</span>
+            <span class="drop-meta"><span class="drop-val" id="drop-type-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
+          </button>
+          <div class="drop-body drop-body-float">
+            <div class="pill-selector" id="type-pills-drop"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Cantidad + Ajuste en una sola fila -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:16px">
+        <div class="field" style="margin-bottom:0">
+          <label>Cantidad de piezas</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <button type="button" id="qty-minus" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;line-height:1">−</button>
+            <span id="qty-display" style="font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--accent);min-width:36px;text-align:center">1</span>
+            <button type="button" id="qty-plus" style="width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;line-height:1">+</button>
+  
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <label style="font-size:10px;font-family:'DM Mono',monospace;color:#750a8b;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">¿Es ajuste?</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label class="ajuste-toggle">
+              <input type="checkbox" id="is-ajuste" onchange="onAjusteChange()">
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+              <span class="ajuste-label">Es un ajuste</span>
+            </label>
+            <span class="badge-ajuste" id="ajuste-badge" style="display:none">AJUSTE</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-bottom">
+        <div class="form-selection">
+          <span style="color:var(--accent)" id="sel-client-display">— Cliente</span> &nbsp;·&nbsp;
+          <span style="color:var(--accent2)" id="sel-type-display">— Tipo</span>
+        </div>
+        <button class="btn-start" id="btn-start" onclick="startTask()">▶ INICIAR TIMER</button>
+      </div>
+    </div>
+
+    <div id="active-timers-container"></div>
+
+    <div class="tasks-header">
+      <div>
+        <div class="section-label">REGISTRO DEL DÍA</div>
+        <div class="task-count" id="task-count">0 tareas registradas</div>
+      </div>
+    </div>
+    <div class="tasks-list" id="tasks-list">
+      <div class="empty-state"><div class="icon">⏱</div>Aún no hay tareas registradas hoy</div>
+    </div>
+    <div class="summary" id="summary" style="display:none">
+      <div class="summary-item"><div class="summary-label">Tiempo total</div><div class="summary-value" id="total-time">00:00:00</div></div>
+      <div class="summary-item"><div class="summary-label">Completadas</div><div class="summary-value" id="done-count">0</div></div>
+      <div class="summary-item"><div class="summary-label">🟢 En SLA</div><div class="summary-value" id="green-count" style="color:var(--green)">0</div></div>
+      <div class="summary-item"><div class="summary-label">🟡 Lento</div><div class="summary-value" id="yellow-count" style="color:var(--orange)">0</div></div>
+      <div class="summary-item"><div class="summary-label">🔴 Excedido</div><div class="summary-value" id="red-count" style="color:var(--danger)">0</div></div>
+      <div class="summary-item"><div class="summary-label">Ajustes</div><div class="summary-value" id="ajuste-count" style="color:var(--purple)">0</div></div>
+    </div>
+  </div>
+
+  <!-- TAB CLIENTES -->
+  <div class="tab-panel" id="tab-clientes">
+    <div class="settings-card">
+      <h3>🏢 Lista de Clientes</h3>
+      <p>Los cambios se guardan localmente y se sincronizan automáticamente.</p>
+      <div class="settings-list" id="clients-settings"></div>
+      <div class="settings-add">
+        <input type="text" id="new-client" placeholder="Nuevo cliente..." />
+        <button class="btn-add" onclick="addClient()">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB TIPOS -->
+  <div class="tab-panel" id="tab-tipos">
+    <div class="settings-card">
+      <h3>🎨 Tipos de Trabajo</h3>
+      <p>Tipos con tiempo SLA definido mostrarán el semáforo automáticamente.</p>
+      <div class="settings-list" id="types-settings"></div>
+      <div class="settings-add">
+        <input type="text" id="new-type" placeholder="Nuevo tipo..." />
+        <button class="btn-add" onclick="addType()">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB SLA REFERENCIA -->
+  <div class="tab-panel" id="tab-sla">
+    <div class="settings-card">
+      <h3>📋 Tiempos SLA de Referencia</h3>
+      <p>Basado en tu documento oficial. El semáforo usa estos tiempos para cada tarea.</p>
+      <div class="settings-list">
+        <!-- populated by JS -->
+        <div id="sla-ref-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CREDENCIALES GOOGLE SHEETS ────────────────────────────────────
+const SHEET_ID = '19W5pj3WsF_yue7ehH7TnZB01OR-YsIDIRdWN_PHwSug';
+const SERVICE_ACCOUNT = {
+  "type":"service_account",
+  "project_id":"gen-lang-client-0979891408",
+  "private_key_id":"6decec546cc4b47a24c466bb4e42c2478fa51817",
+  "private_key":"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDDNCzE4x00Oh6a\nL0ytRlOS0N3km7awgjqvXueio0S51Zi+K9XMTPa41DPHAjE5MaNZzwswDZENKrmB\nAX4/LzcpSilwyPMYfhdOUXzvFkf20PTTKAPqYYz75KzCGzwyPkXt+PGxK9tbIfp9\nUh2u6ssZEEz1QD/Hg6EcUHTNRYk8yREE19jJ4bmHV977vT1QJO7JOsNb7qRQFnWM\nSbE4tSNxlncdZ7HtBaJ/m3Fgbn048GmQ5Df0dCdbocIlbY8PJrM0kCWc5QjNjjOX\n+hf2Y3EnACWicctTiEZ7l7RDCGjyxL7DMRWg4t1cR44ZQ1DUVNur+Mb4yqs9nX2c\nl/6S40YDAgMBAAECggEAHperuIObjRbauvFUxAc0i9reG7jnrcwLJHbsOIn7+F/o\nW02FaUpalGb1YmgOjNchsa6II1TM+dJLVlOElKRysa7kxb9IkfsY7fZJbTMBvkXL\nSNiJnI8DSGrzREx+Z6Vo0j3kqw6jhynRFxjqfAJiKCBs3zbdiAgyFLzrQUx3kKXw\nSh2oLJ+rrV3zVDPNNEk7MyGoNEOi+cRGhy9cF3xTQ5Edyj7O/RX/2E7MFroaQEKq\n7k9Bv4hid9f1TcpU89O9CuYy5ow1Ul1nGfAgchKhDdeK58o52xXWO4uZBJIhCK/7\nFXscDUshsGkfBLc4nqPv/BbA4aiHTRz74ZMN3W/EIQKBgQDgHOjz3mNsNeCCGZxh\ncfcFv1rPdJljXDo942YFZ3fsw72OIAI0X98f560hX2pRJwaKUYYV+NAc2RsvkuuN\nsl3T2LTuzkKpi2/k7t6y59Fq+o8lJLKRCekN3lXNBLcJSXXt2BKr5Pa1h0VNPYxd\nAVQCW4cy/lelUdHJMroAuQ39cQKBgQDe+kdrQZYsF8Z0u3eWDVNifKGIh9nfCfZH\n+Ux401jpN18YUAGjCl8j8oP/28Y11NNV45Dgr5e6clBoZ/7iOkv6ld/npzNvq1Tu\nJO0s0nm4MqhdmdvMz6x/fXudUCKgBWdY+FLw0Ke2lhqebdde9BB2A6H7dGt41QhS\nRY2/oIQQswKBgCmHMeN+og27Lg7tj/y+kXePLdSjVokC3gf5yz3VHnPREZ70b3Ql\nD8NpurskYx8GjD+1O5N2t5mg4Vi/cMag9qH61gwqTE/+do2Fdd7Q9g1MwJmxYyVd\nIMJhIKUM6p3d7uxTzaHsm4qntj/J1+ikBl0peLQKTVNlBeqya6UWpXEBAoGBAKjm\ntrC1Nrbhr49+7b/5Ch/BPm74UP3VQvwUCGxB08idC+iTuhmxYo4NRxXJeWQPeaJG\nxdicyfcOXoAnvnfJJwKDAt8r1ReSlbvqtsnMCS2RGd4FDO0gpo7QE5H/QKssTLOl\nLtaBh3kUTMeTdp/TiqCKcenSrxIRdMM1MoFkaoVnAoGBAK8WQqO4ASliWxTMDZ7W\nDVTyeqyOcGqLTmpvQXBG58OQlYm7ONE6aS/ZwPnz2tHfDzSWDglkYMrEbam3OUch\nc80Wz+wWNhS0DwCSe5f8/VKkXjNLBrRdhC/s0yQ/icmfVGjmDzFv7fg7aQ4Cs3w5\nG0Wh8fxEFx0DOzsXCJEhhAZa\n-----END PRIVATE KEY-----\n",
+  "client_email":"sla-tracker@gen-lang-client-0979891408.iam.gserviceaccount.com",
+  "client_id":"114872384595681819894",
+  "token_uri":"https://oauth2.googleapis.com/token"
+};
+
+// ── SLA TIEMPOS (minutos, rango: [min, max]) ──────────────────────
+const SLA_TIMES = {
+  'Estático': [30, 60], 'Pieza Estática': [30, 60],
+  'Carrusel': [60, 120],
+  'Historia': [20, 30],
+  'Reel Orgánico': [60, 120], 'Reel Entrevista': [90, 180],
+  'Portada de Reel': [30, 60],
+  'Ajuste': [20, 60], 'Ajustes': [20, 60],
+  'Ajuste Ortográfico': [10, 20], 'Ajuste Visual': [30, 60],
+  'Adaptación': [30, 60],
+  'Web': [30, 60],
+  'Bumper para TV': [360, 420],
+  'Pantalla o Valla': [40, 90],
+  'Sticker': [20, 30],
+  'Material Impreso': [60, 120],
+  'Multiformatos': [60, 120],
+  'Video TikTok': [60, 120],
+  'Keyvisual': [120, 180],
+  'Cuña Radial': [60, 120],
+  // Animaciones
+  'Animación - Marquesina de Logo': [120, 180],
+  'Animación - Contenido Social Media': [60, 90],
+  'Animación - Valla Digital': [40, 90],
+  'Animación - Bumper': [360, 420],
+  'Animación - Quemado': [120, 180],
+};
+
+// ── DEFAULTS ─────────────────────────────────────────────────────
+const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell'];
+const DEF_TYPES   = [
+  'Estático','Carrusel','Historia','Reel Entrevista','Reel Orgánico',
+  'Pantalla o Valla','Sticker','Portada de Reel','Adaptación','Ajuste',
+  'Ajuste Ortográfico','Ajuste Visual',
+  'Web','Bumper para TV','Cuña Radial','Material Impreso','Keyvisual',
+  'Video TikTok','Multiformatos',
+  'Animación - Marquesina de Logo','Animación - Contenido Social Media',
+  'Animación - Valla Digital','Animación - Bumper','Animación - Quemado'
+];
+
+// ── STATE ────────────────────────────────────────────────────────
+let tasks = [], selClient = '', selTypes = [], selDesigner = '', selQty = 1, selCategory = '';
+let clients = lsLoad('sla_clients', DEF_CLIENTS);
+let types   = lsLoad('sla_types',   DEF_TYPES);
+// Merge any new default types not yet in localStorage
+const missingTypes = DEF_TYPES.filter(t => !types.includes(t));
+if (missingTypes.length) { types = [...types, ...missingTypes]; lsSave('sla_types', types); }
+let accessToken = null, tokenExpiry = 0;
+
+// ── BOOT ─────────────────────────────────────────────────────────
+updateDate(); setInterval(tick, 1000);
+document.getElementById('btn-sheet-link').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+lsLoadTasks(); renderAll(); renderSLARef();
+initDropBlocks();
+
+// Attach designer pill listeners
+document.querySelectorAll('.designer-pill').forEach(pill => {
+  pill.addEventListener('click', () => selectDesigner(pill.textContent.trim()));
+});
+
+// ── DROP BLOCKS (acordeón) ────────────────────────────────────────
+function initDropBlocks() {
+  // Toggle open/close — solo uno abierto a la vez
+  document.querySelectorAll('.drop-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const block = header.closest('.drop-block');
+      const isOpen = block.classList.contains('open');
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+      if (!isOpen) block.classList.add('open');
+    });
+  });
+
+  // Cliente pills
+  document.querySelectorAll('#client-pills .pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const v = pill.getAttribute('data-value');
+      selClient = selClient === v ? '' : v;
+      renderClientPills();
+      document.getElementById('drop-client-val').textContent = selClient || 'Seleccionar...';
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+    });
+  });
+
+  // Categoría pills
+  document.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const v = pill.getAttribute('data-val');
+      selCategory = selCategory === v ? '' : v;
+      document.querySelectorAll('.cat-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-val') === selCategory));
+      document.getElementById('drop-category-val').textContent = selCategory || 'Seleccionar...';
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+    });
+  });
+}
+
+// Qty controls
+document.getElementById('qty-minus').addEventListener('click', () => setQty(selQty - 1));
+document.getElementById('qty-plus').addEventListener('click',  () => setQty(selQty + 1));
+
+
+getAccessToken().then(() => {
+  setSyncStatus('synced', '✓ Conectado a Google Sheets');
+  ensureSheetHeaders();
+}).catch(e => {
+  setSyncStatus('error', 'Sin conexión al Sheet');
+  console.error(e);
+});
+
+// ── GOOGLE AUTH (JWT) ─────────────────────────────────────────────
+async function getAccessToken() {
+  if (accessToken && Date.now() < tokenExpiry - 60000) return accessToken;
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claim  = b64url(JSON.stringify({
+    iss: SERVICE_ACCOUNT.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: SERVICE_ACCOUNT.token_uri,
+    exp: now + 3600, iat: now
+  }));
+  const unsigned = `${header}.${claim}`;
+  const key = await importPrivateKey(SERVICE_ACCOUNT.private_key);
+  const sig = await window.crypto.subtle.sign({ name: 'RSASSA-PKCS1-v1_5' }, key, new TextEncoder().encode(unsigned));
+  const jwt = `${unsigned}.${b64url_arr(new Uint8Array(sig))}`;
+  const res = await fetch(SERVICE_ACCOUNT.token_uri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Token error: ' + JSON.stringify(data));
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + data.expires_in * 1000;
+  return accessToken;
+}
+
+async function importPrivateKey(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
+  const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  return crypto.subtle.importKey('pkcs8', bin, { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']);
+}
+
+function b64url(str) { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
+function b64url_arr(arr) { return btoa(String.fromCharCode(...arr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
+
+// ── SHEETS API ────────────────────────────────────────────────────
+// ── MONTH SHEET ──────────────────────────────────────────────────
+function currentSheet() {
+  return new Date().toLocaleDateString('es-PA', { month:'long', year:'numeric' })
+    .replace(/^\w/, c => c.toUpperCase()); // e.g. "Marzo 2026"
+}
+
+async function ensureMonthSheet() {
+  const token = await getAccessToken();
+  const sheetName = currentSheet();
+
+  // Check if tab already exists
+  const metaRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(title))`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const meta = await metaRes.json();
+  const exists = (meta.sheets || []).some(s => s.properties.title === sheetName);
+  if (exists) return;
+
+  // Create new tab for this month
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ addSheet: { properties: { title: sheetName } } }] })
+    }
+  );
+
+  // Add headers to new tab
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: [['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']] })
+    }
+  );
+
+  showToast(`📅 Nueva pestaña creada: ${sheetName}`, 'success');
+}
+
+async function sheetsAppend(values) {
+  const token = await getAccessToken();
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentSheet()}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+    { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ values }) }
+  );
+  if (!res.ok) throw new Error(await res.text());
+}
+
+async function ensureSheetHeaders() {
+  try {
+    const token = await getAccessToken();
+
+    // Ensure "Lock" sheet exists (used as distributed mutex for day separator)
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(title))`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const meta = await metaRes.json();
+    const sheetTitles = (meta.sheets || []).map(s => s.properties.title);
+    if (!sheetTitles.includes('Lock')) {
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requests: [{ addSheet: { properties: { title: 'Lock' } } }] })
+        }
+      );
+    }
+
+    await ensureMonthSheet();
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentSheet()}!A1:N500`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    const rows = data.values || [];
+    const headersExist = rows.some(r => r && r.includes('Diseñador'));
+    if (!headersExist) {
+      await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
+    }
+    // NOTE: Day separator is inserted on first task completion, not on app open
+  } catch(e) { console.warn('Headers check failed', e); }
+}
+
+let separatorInProgress = false;
+async function ensureDaySeparator() {
+  if (separatorInProgress) return;
+  separatorInProgress = true;
+  try {
+    const token = await getAccessToken();
+    const todayDate = new Date().toLocaleDateString('es-PA');
+    const todayLabel = '── ' + new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).toUpperCase() + ' ──';
+
+    // Check if today's separator already exists
+    const check = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentSheet()}!A1:A500`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const checkData = await check.json();
+    const checkRows = checkData.values || [];
+    if (checkRows.some(r => r[0] && r[0].includes(todayDate))) return;
+
+    // Insert blank spacer + colored separator row
+    await sheetsAppend([
+      ['','','','','','','','','','','','','',''],
+      [todayLabel,'','','','','','','','','','','','','']
+    ]);
+
+    // Apply rosa #E35376 color to the separator row
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId,title))`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const meta = await metaRes.json();
+    const sheetTab = meta.sheets.find(s => s.properties.title === 'Tareas');
+    if (!sheetTab) return;
+
+    const res2 = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentSheet()}!A1:A500`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const rows2 = (await res2.json()).values || [];
+    const sepRowIndex = rows2.findIndex(r => r[0] && r[0].includes(todayDate));
+    if (sepRowIndex === -1) return;
+
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests: [{ repeatCell: {
+          range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex, endRowIndex: sepRowIndex + 1, startColumnIndex: 0, endColumnIndex: 14 },
+          cell: { userEnteredFormat: {
+            backgroundColor: { red: 0.890, green: 0.208, blue: 0.463 },
+            textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 11 },
+            horizontalAlignment: 'LEFT'
+          }},
+          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
+        }}]})
+      }
+    );
+  } catch(e) { console.warn('Day separator failed', e); }
+  finally { separatorInProgress = false; }
+}
+
+async function syncTaskToSheet(task) {
+  setSyncStatus('syncing', 'Guardando...');
+  try {
+    // Ensure this month's tab exists, then ensure today's separator
+    await ensureMonthSheet();
+    await ensureDaySeparator();
+
+    const slaRef = getSLAMax(task.type);
+    const durMin = Math.round(task.seconds / 60);
+    const pct    = slaRef ? Math.round((durMin / slaRef) * 100) : null;
+    const semaforo = pct === null ? '—' : pct <= 100 ? '🟢 OK' : pct <= 150 ? '🟡 Lento' : '🔴 Excedido';
+
+    await sheetsAppend([[
+      new Date(task.startTime).toLocaleDateString('es-PA'),
+      task.designer,
+      task.name,
+      task.client,
+      task.category || '—',
+      task.type,
+      task.qty || 1,
+      task.isAjuste ? 'Sí' : 'No',
+      new Date(task.startTime).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
+      new Date(task.endTime).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
+      durMin,
+      slaRef || '—',
+      pct ? pct + '%' : '—',
+      semaforo
+    ]]);
+    setSyncStatus('synced', '✓ Guardado en Sheets');
+    showToast('✓ Tarea guardada en Google Sheets', 'success');
+  } catch(e) {
+    setSyncStatus('error', 'Error al guardar');
+    showToast('Error al sincronizar con Sheets', 'error');
+    console.error(e);
+  }
+}
+
+// ── SLA LOGIC ─────────────────────────────────────────────────────
+function getSLAMax(type) {
+  for (const [key, range] of Object.entries(SLA_TIMES)) {
+    if (type && type.toLowerCase().includes(key.toLowerCase())) return range[1];
+  }
+  return null;
+}
+
+function getSLAStatus(seconds, type) {
+  const slaMax = getSLAMax(type);
+  if (!slaMax) return 'none';
+  const min = seconds / 60;
+  const pct = (min / slaMax) * 100;
+  if (pct <= 100) return 'green';
+  if (pct <= 150) return 'yellow';
+  return 'red';
+}
+
+function getSLABadge(seconds, type) {
+  const status = getSLAStatus(seconds, type);
+  const slaMax = getSLAMax(type);
+  const min = Math.round(seconds / 60);
+  const pct = slaMax ? Math.round((min / slaMax) * 100) : null;
+  const labels = { green:'🟢 En SLA', yellow:'🟡 Lento', red:'🔴 Excedido', none:'— Sin ref.' };
+  const classes = { green:'sla-green', yellow:'sla-yellow', red:'sla-red', none:'sla-none' };
+  const txt = status === 'none' ? labels.none : `${labels[status]} (${pct}%)`;
+  return `<span class="sla-badge ${classes[status]}">${txt}</span>`;
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  const names = ['tracker','clientes','tipos','sla'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── CLOCK ────────────────────────────────────────────────────────
+function updateDate() {
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
+  const now = Date.now();
+  activeTasks.forEach(at => {
+    if (!at.paused) {
+      // Calculate real elapsed seconds from startedAt timestamp
+      at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+      const el = document.getElementById(`timer-display-${at.id}`);
+      if (el) el.textContent = fmt(at.seconds);
+    }
+  });
+}
+
+// ── FORMAT ────────────────────────────────────────────────────────
+function fmt(s) { return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); }
+function fmtShort(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}m`:`${m}m ${s%60}s`; }
+
+// ── DESIGNER ─────────────────────────────────────────────────────
+function selectDesigner(name) {
+  selDesigner = name;
+  document.querySelectorAll('.designer-pill').forEach(p=>p.classList.toggle('active', p.textContent===name));
+  try { localStorage.setItem('sla_designer', name); } catch(e){}
+}
+
+// ── QUANTITY ─────────────────────────────────────────────────────
+function setQty(n) {
+  selQty = Math.max(1, n);
+  document.getElementById('qty-display').textContent = selQty;
+  
+}
+
+// ── PILLS ────────────────────────────────────────────────────────
+function renderTypePillsDrop() {
+  const container = document.getElementById('type-pills-drop');
+  if (!container) return;
+  container.innerHTML = types.map(t => {
+    const isAnim = t.startsWith('Animación');
+    return `<span class="type-pill${selTypes.includes(t)?' active':''}${isAnim?' anim-pill':''}" data-val="${esc(t)}">${esc(t)}</span>`;
+  }).join('');
+  container.querySelectorAll('.type-pill').forEach(pill => {
+    pill.onclick = () => {
+      const v = pill.getAttribute('data-val');
+      if (selTypes.includes(v)) {
+        selTypes = selTypes.filter(t => t !== v);
+      } else if (selTypes.length < 5) {
+        selTypes.push(v);
+      } else {
+        showToast('Máximo 5 tipos a la vez', 'warning'); return;
+      }
+      const short = selTypes.length > 1 ? `${selTypes.length} tipos` : (selTypes[0] || 'Seleccionar');
+      document.getElementById('drop-type-val').textContent = short;
+      document.getElementById('sel-type-display').textContent = selTypes.length ? selTypes.join(' · ') : '— Tipo';
+      container.querySelectorAll('.type-pill').forEach(p =>
+        p.classList.toggle('active', selTypes.includes(p.getAttribute('data-val')))
+      );
+      document.getElementById('drop-type').classList.add('open');
+    };
+  });
+}
+
+function renderAll() {
+  renderClientPills();
+  renderTypePillsDrop();
+  renderSettingsClients(); renderSettingsTypes();
+  const saved = localStorage.getItem('sla_designer');
+  if (saved) selectDesigner(saved);
+}
+
+function renderClientPills() {
+  const container = document.getElementById('client-pills');
+  container.innerHTML = clients.map(c=>
+    `<span class="pill ${selClient===c?'sel-client':''}" data-value="${esc(c)}">${esc(c)}</span>`
+  ).join('');
+  container.querySelectorAll('.pill').forEach(el => {
+    el.addEventListener('click', () => {
+      const v = el.getAttribute('data-value');
+      selClient = selClient === v ? '' : v;
+      renderClientPills();
+      document.getElementById('drop-client-val').textContent = selClient || 'Seleccionar...';
+      document.getElementById('sel-client-display').textContent = selClient || '— Cliente';
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+    });
+  });
+  document.getElementById('sel-client-display').textContent = selClient || '— Cliente';
+}
+
+function onAjusteChange() {
+  document.getElementById('ajuste-badge').style.display = document.getElementById('is-ajuste').checked?'inline-block':'none';
+}
+
+// ── TIMER (multi, max 2) ──────────────────────────────────────────
+let activeTasks = []; // array of {id, task, seconds, paused}
+
+function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
+  const now = Date.now();
+  activeTasks.forEach(at => {
+    if (!at.paused) {
+      // Calculate real elapsed seconds from startedAt timestamp
+      at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+      const el = document.getElementById(`timer-display-${at.id}`);
+      if (el) el.textContent = fmt(at.seconds);
+    }
+  });
+}
+
+function renderActiveTimers() {
+  const container = document.getElementById('active-timers-container');
+  container.innerHTML = activeTasks.map(at => `
+    <div class="active-timer visible" id="active-timer-${at.id}">
+      <div class="timer-header">
+        <div>
+          <div class="timer-task-name"><span class="pulse-dot"></span><span>${esc(at.task.name)}</span></div>
+          <div class="timer-meta">
+            ${esc(at.task.designer)} · ${esc(at.task.client)} · ${esc(at.task.type)}${at.task.qty>1?' · '+at.task.qty+' pzs':''}
+            ${at.task.isAjuste?'<span class="badge-ajuste">AJUSTE</span>':''}
+          </div>
+        </div>
+        <div class="timer-display" id="timer-display-${at.id}">${fmt(at.seconds)}</div>
+      </div>
+      <div class="timer-actions">
+        <button class="btn-stop" data-id="${at.id}" data-action="complete">⬛ COMPLETADA</button>
+        <button class="btn-pause" data-id="${at.id}" data-action="pause" style="${at.paused?'color:var(--accent);border-color:var(--accent)':''}">${at.paused?'▶ CONTINUAR':'⏸ PAUSAR'}</button>
+        <button class="btn-stop" data-id="${at.id}" data-action="cancel" style="border-color:var(--muted);color:var(--muted)">✕ CANCELAR</button>
+      </div>
+    </div>`).join('');
+
+  // Attach listeners
+  container.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = parseInt(btn.getAttribute('data-id'));
+      const action = btn.getAttribute('data-action');
+      if (action === 'complete') stopTask(id, true);
+      else if (action === 'cancel') stopTask(id, false);
+      else if (action === 'pause') togglePause(id);
+    });
+  });
+}
+
+function startTask() {
+  const name = document.getElementById('task-name').value.trim();
+  const isAjuste = document.getElementById('is-ajuste').checked;
+  if (!selDesigner) { showToast('Selecciona tu nombre primero', 'warning'); return; }
+  if (!name)        { hi('task-name'); return; }
+  if (activeTasks.length >= 2) { showToast('Máximo 2 tareas activas a la vez', 'warning'); return; }
+
+  const id = Date.now();
+  const task = { name, designer:selDesigner, client:selClient||'—', type:selTypes.length?selTypes.join(', '):'—', qty:selQty, category:selCategory||'—', isAjuste, startTime:new Date().toISOString() };
+  activeTasks.push({ id, task, seconds:0, paused:false, startedAt:Date.now(), pausedSeconds:0 });
+  renderActiveTimers();
+
+  document.getElementById('task-name').value='';
+  document.getElementById('is-ajuste').checked=false;
+  document.getElementById('ajuste-badge').style.display='none';
+  setQty(1);
+  selCategory=''; selTypes=[]; selClient='';
+  document.querySelectorAll('.cat-pill,.type-pill').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.drop-block').forEach(b=>b.classList.remove('open'));
+  document.getElementById('drop-client-val').textContent='Seleccionar...';
+  document.getElementById('drop-category-val').textContent='Seleccionar...';
+  document.getElementById('drop-type-val').textContent='Seleccionar';
+  document.getElementById('sel-client-display').textContent='— Cliente';
+  document.getElementById('sel-type-display').textContent='— Tipo';
+  renderClientPills();
+}
+
+function stopTask(id, completed) {
+  const idx = activeTasks.findIndex(at => at.id === id);
+  if (idx === -1) return;
+  const at = activeTasks[idx];
+  if (completed) {
+    const task = { id:Date.now(), ...at.task, seconds:at.seconds, status:'Completada', endTime:new Date().toISOString() };
+    tasks.push(task);
+    lsSaveTasks();
+    renderTasks();
+    syncTaskToSheet(task);
+  }
+  activeTasks.splice(idx, 1);
+  renderActiveTimers();
+}
+
+function togglePause(id) {
+  const at = activeTasks.find(at => at.id === id);
+  if (!at) return;
+  if (!at.paused) {
+    // Pausing — save elapsed seconds so far
+    at.pausedSeconds = at.seconds;
+  } else {
+    // Resuming — reset startedAt to now
+    at.startedAt = Date.now();
+  }
+  at.paused = !at.paused;
+  renderActiveTimers();
+}
+
+function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); lsSaveTasks(); renderTasks(); }
+
+// ── RENDER TASKS ─────────────────────────────────────────────────
+function renderTasks() {
+  const list=document.getElementById('tasks-list');
+  document.getElementById('task-count').textContent=`${tasks.length} tarea${tasks.length!==1?'s':''} registrada${tasks.length!==1?'s':''}`;
+  if (!tasks.length) {
+    list.innerHTML='<div class="empty-state"><div class="icon">⏱</div>Aún no hay tareas registradas hoy</div>';
+    document.getElementById('summary').style.display='none'; return;
+  }
+  document.getElementById('summary').style.display='flex';
+  list.innerHTML=tasks.map(t=>`
+    <div class="task-card">
+      <div>
+        <div class="task-card-name">${esc(t.name)}</div>
+        <div class="task-card-meta">
+          ${t.type!=='—'?`<span class="tag tag-type">${esc(t.type)}</span>`:''}
+          ${t.category && t.category!=='—'?`<span class="tag" style="background:rgba(255,255,255,0.1);color:var(--text);border:1px solid rgba(255,255,255,0.2)">${esc(t.category)}</span>`:''}
+          ${t.qty > 1 ? `<span class="tag" style="background:rgba(255,255,255,0.06);color:var(--muted)">${t.qty} pzs</span>` : ''}
+          <span class="tag tag-done">${t.status}</span>
+          ${t.client!=='—'?`<span class="tag tag-client">${esc(t.client)}</span>`:''}
+          ${t.isAjuste?`<span class="badge-ajuste">AJUSTE</span>`:''}
+          ${getSLABadge(t.seconds, t.type)}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px">${esc(t.designer)}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;line-height:1.8">
+        ${ts(t.startTime)} →<br>${ts(t.endTime)}
+      </div>
+      <div class="task-time">${fmt(t.seconds)}<small>${fmtShort(t.seconds)}</small></div>
+      <button class="btn-delete" data-id="${t.id}">✕</button>
+    </div>`).join('');
+
+  document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => deleteTask(parseInt(btn.getAttribute('data-id'))));
+  });
+
+  const total=tasks.reduce((a,t)=>a+t.seconds,0);
+  const greens=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='green').length;
+  const yellows=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='yellow').length;
+  const reds=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='red').length;
+  document.getElementById('total-time').textContent=fmt(total);
+  document.getElementById('done-count').textContent=tasks.filter(t=>t.status==='Completada').length;
+  document.getElementById('green-count').textContent=greens;
+  document.getElementById('yellow-count').textContent=yellows;
+  document.getElementById('red-count').textContent=reds;
+  document.getElementById('ajuste-count').textContent=tasks.filter(t=>t.isAjuste).length;
+}
+
+function ts(iso){return new Date(iso).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});}
+
+// ── SLA REF TAB ──────────────────────────────────────────────────
+function renderSLARef() {
+  document.getElementById('sla-ref-list').innerHTML = Object.entries(SLA_TIMES).map(([k,v])=>`
+    <div class="settings-item">
+      <span>${k}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:#750a8b;font-weight:600">${v[0]}–${v[1]} min</span>
+    </div>`).join('');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+function renderSettingsClients() {
+  const container = document.getElementById('clients-settings');
+  container.innerHTML = clients.map((c,i)=>`
+    <div class="settings-item"><span>${esc(c)}</span><button class="btn-sm" data-index="${i}">Eliminar</button></div>`).join('');
+  container.querySelectorAll('.btn-sm').forEach(btn => {
+    btn.addEventListener('click', () => removeClient(parseInt(btn.getAttribute('data-index'))));
+  });
+}
+function renderSettingsTypes() {
+  const container = document.getElementById('types-settings');
+  container.innerHTML = types.map((t,i)=>`
+    <div class="settings-item"><span>${esc(t)}</span><button class="btn-sm" data-index="${i}">Eliminar</button></div>`).join('');
+  container.querySelectorAll('.btn-sm').forEach(btn => {
+    btn.addEventListener('click', () => removeType(parseInt(btn.getAttribute('data-index'))));
+  });
+}
+function addClient(){const v=document.getElementById('new-client').value.trim();if(!v)return;clients.push(v);lsSave('sla_clients',clients);document.getElementById('new-client').value='';renderClientPills();renderSettingsClients();}
+function removeClient(i){if(selClient===clients[i])selClient='';clients.splice(i,1);lsSave('sla_clients',clients);renderClientPills();renderSettingsClients();}
+function addType(){const v=document.getElementById('new-type').value.trim();if(!v)return;types.push(v);lsSave('sla_types',types);document.getElementById('new-type').value='';renderTypePillsDrop();renderSettingsTypes();}
+function removeType(i){selTypes=selTypes.filter(t=>t!==types[i]);types.splice(i,1);lsSave('sla_types',types);renderTypePillsDrop();renderSettingsTypes();}
+document.getElementById('new-client').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
+document.getElementById('new-type').addEventListener('keydown',e=>{if(e.key==='Enter')addType();});
+
+// ── STORAGE ──────────────────────────────────────────────────────
+function lsSaveTasks(){try{localStorage.setItem('sla_tasks_'+new Date().toDateString(),JSON.stringify(tasks));}catch(e){}}
+function lsLoadTasks(){try{const s=localStorage.getItem('sla_tasks_'+new Date().toDateString());if(s)tasks=JSON.parse(s);renderTasks();}catch(e){}}
+function lsSave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function lsLoad(k,def){try{const s=localStorage.getItem(k);return s?JSON.parse(s):[...def];}catch(e){return[...def];}}
+setInterval(lsSaveTasks,15000);
+
+// ── SYNC STATUS ──────────────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-text');
+  dot.className='sync-dot '+state; txt.textContent=text;
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(type||'');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function hi(id){const el=document.getElementById(id);el.style.borderColor='var(--danger)';el.focus();setTimeout(()=>el.style.borderColor='',1500);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
