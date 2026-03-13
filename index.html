@@ -448,12 +448,20 @@ document.querySelectorAll('.designer-pill').forEach(pill => {
 function initDropBlocks() {
   // Toggle open/close — solo uno abierto a la vez
   document.querySelectorAll('.drop-header').forEach(header => {
-    header.addEventListener('click', () => {
+    header.addEventListener('click', (e) => {
+      e.stopPropagation();
       const block = header.closest('.drop-block');
       const isOpen = block.classList.contains('open');
       document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
       if (!isOpen) block.classList.add('open');
     });
+  });
+
+  // Cerrar al tocar fuera del dropdown
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.drop-block')) {
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+    }
   });
 
   // Cliente pills
@@ -797,7 +805,8 @@ function renderTypePillsDrop() {
     return `<span class="type-pill${selTypes.includes(t)?' active':''}${isAnim?' anim-pill':''}" data-val="${esc(t)}">${esc(t)}</span>`;
   }).join('');
   container.querySelectorAll('.type-pill').forEach(pill => {
-    pill.onclick = () => {
+    pill.onclick = (e) => {
+      e.stopPropagation();
       const v = pill.getAttribute('data-val');
       if (selTypes.includes(v)) {
         selTypes = selTypes.filter(t => t !== v);
