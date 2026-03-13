@@ -116,7 +116,11 @@
   .timer-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
   .timer-task-name { font-size: 18px; font-weight: 700; color: var(--accent); }
   .timer-meta { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .timer-display { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500; color: var(--accent); letter-spacing: 2px; line-height: 1; }
+  .timer-display { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500; color: var(--accent); letter-spacing: 2px; line-height: 1; transition: color 0.5s; }
+  .timer-display.sla-warning { color: #f6bf4a; animation: pulse 1s infinite; }
+  .timer-display.sla-danger  { color: #ff4444; animation: pulse 0.6s infinite; }
+  .sla-bar-wrap { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .sla-bar { height: 4px; border-radius: 2px; transition: width 0.5s, background 0.5s; background: #4caf50; }
   .pulse-dot { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-right: 8px; animation: pulse 1.2s infinite; vertical-align: middle; }
   .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
   .btn-stop { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
@@ -770,15 +774,32 @@ function tick() {
   const now = Date.now();
   activeTasks.forEach(at => {
     if (!at.paused) {
-      // Calculate real elapsed seconds from startedAt timestamp
       at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
       const el = document.getElementById(`timer-display-${at.id}`);
       if (el) el.textContent = fmt(at.seconds);
     }
+    // Update SLA bar and timer color
+    const slaMax = getSLAMax(at.task.type);
+    if (slaMax) {
+      const pct = (at.seconds / 60) / slaMax * 100;
+      const bar = document.getElementById(`sla-bar-${at.id}`);
+      const display = document.getElementById(`timer-display-${at.id}`);
+      const label = document.getElementById(`sla-label-${at.id}`);
+      if (bar) {
+        bar.style.width = Math.min(pct, 100) + '%';
+        bar.style.background = pct < 80 ? '#4caf50' : pct < 100 ? '#f6bf4a' : '#ff4444';
+      }
+      if (display) {
+        display.className = 'timer-display' + (pct >= 100 ? ' sla-danger' : pct >= 80 ? ' sla-warning' : '');
+      }
+      if (label) {
+        const remaining = slaMax - Math.floor(at.seconds / 60);
+        label.textContent = pct >= 100 ? '⚠️ SLA excedido' : pct >= 80 ? `⏳ ${remaining} min restantes` : `SLA: ${slaMax} min`;
+        label.style.color = pct >= 100 ? '#ff4444' : pct >= 80 ? '#f6bf4a' : 'rgba(255,255,255,0.5)';
+      }
+    }
   });
 }
-
-// ── FORMAT ────────────────────────────────────────────────────────
 function fmt(s) { return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); }
 function fmtShort(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}m`:`${m}m ${s%60}s`; }
 
@@ -859,22 +880,12 @@ function onAjusteChange() {
 // ── TIMER (multi, max 2) ──────────────────────────────────────────
 let activeTasks = []; // array of {id, task, seconds, paused}
 
-function tick() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
-  const now = Date.now();
-  activeTasks.forEach(at => {
-    if (!at.paused) {
-      // Calculate real elapsed seconds from startedAt timestamp
-      at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
-      const el = document.getElementById(`timer-display-${at.id}`);
-      if (el) el.textContent = fmt(at.seconds);
-    }
-  });
-}
-
 function renderActiveTimers() {
   const container = document.getElementById('active-timers-container');
-  container.innerHTML = activeTasks.map(at => `
+  container.innerHTML = activeTasks.map(at => {
+    const slaMax = getSLAMax(at.task.type);
+    const slaBarHtml = slaMax ? `<div class="sla-bar-wrap"><div class="sla-bar" id="sla-bar-${at.id}" style="width:0%"></div></div>` : '';
+    return `
     <div class="active-timer visible" id="active-timer-${at.id}">
       <div class="timer-header">
         <div>
@@ -884,14 +895,19 @@ function renderActiveTimers() {
             ${at.task.isAjuste?'<span class="badge-ajuste">AJUSTE</span>':''}
           </div>
         </div>
-        <div class="timer-display" id="timer-display-${at.id}">${fmt(at.seconds)}</div>
+        <div style="text-align:right">
+          <div class="timer-display" id="timer-display-${at.id}">${fmt(at.seconds)}</div>
+          <div id="sla-label-${at.id}" style="font-family:'DM Mono',monospace;font-size:10px;margin-top:4px;color:rgba(255,255,255,0.5);">${slaMax ? `SLA: ${slaMax} min` : ''}</div>
+        </div>
       </div>
+      ${slaBarHtml}
       <div class="timer-actions">
         <button class="btn-stop" data-id="${at.id}" data-action="complete">⬛ COMPLETADA</button>
         <button class="btn-pause" data-id="${at.id}" data-action="pause" style="${at.paused?'color:var(--accent);border-color:var(--accent)':''}">${at.paused?'▶ CONTINUAR':'⏸ PAUSAR'}</button>
         <button class="btn-stop" data-id="${at.id}" data-action="cancel" style="border-color:var(--muted);color:var(--muted)">✕ CANCELAR</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Attach listeners
   container.querySelectorAll('[data-action]').forEach(btn => {
