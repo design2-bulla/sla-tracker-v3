@@ -417,7 +417,7 @@ const SLA_TIMES = {
 };
 
 // ── DEFAULTS ─────────────────────────────────────────────────────
-const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell'];
+const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON'];
 const DEF_TYPES   = [
   'Estático','Carrusel','Historia','Reel Entrevista','Reel Orgánico',
   'Pantalla o Valla','Sticker','Portada de Reel','Adaptación','Ajuste',
@@ -430,17 +430,68 @@ const DEF_TYPES   = [
 
 // ── STATE ────────────────────────────────────────────────────────
 let tasks = [], selClient = '', selTypes = [], selDesigner = '', selQty = 1, selCategory = '';
-let clients = lsLoad('sla_clients', DEF_CLIENTS);
-let types   = lsLoad('sla_types',   DEF_TYPES);
-// Merge any new default types not yet in localStorage
+let clients = [...DEF_CLIENTS];
+let types   = [...DEF_TYPES];
 const missingTypes = DEF_TYPES.filter(t => !types.includes(t));
-if (missingTypes.length) { types = [...types, ...missingTypes]; lsSave('sla_types', types); }
+if (missingTypes.length) { types = [...types, ...missingTypes]; }
+
+// ── SHEET CONFIG (clientes y tipos compartidos) ───────────────────
+async function loadConfigFromSheet() {
+  try {
+    const token = await getAccessToken();
+    // Ensure Config sheet exists
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(title))`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const meta = await metaRes.json();
+    const titles = (meta.sheets||[]).map(s=>s.properties.title);
+    if (!titles.includes('Config')) {
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`, {
+        method:'POST', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+        body: JSON.stringify({requests:[{addSheet:{properties:{title:'Config'}}}]})
+      });
+      // Write defaults to new Config sheet
+      await saveConfigToSheet();
+      return;
+    }
+    // Read config
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A1:B200`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    const rows = data.values || [];
+    const sheetClients = rows.filter(r=>r[0]==='cliente').map(r=>r[1]).filter(Boolean);
+    const sheetTypes   = rows.filter(r=>r[0]==='tipo').map(r=>r[1]).filter(Boolean);
+    if (sheetClients.length) clients = sheetClients;
+    if (sheetTypes.length)   types   = sheetTypes;
+    renderAll();
+  } catch(e) { console.warn('Config load failed', e); }
+}
+
+async function saveConfigToSheet() {
+  try {
+    const token = await getAccessToken();
+    const rows = [
+      ...clients.map(c=>['cliente',c]),
+      ...types.map(t=>['tipo',t])
+    ];
+    // Clear then rewrite
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Config!A1:B500?valueInputOption=RAW`,
+      { method:'PUT', headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},
+        body: JSON.stringify({values:rows}) }
+    );
+  } catch(e) { console.warn('Config save failed', e); }
+}
 let accessToken = null, tokenExpiry = 0;
 
 // ── BOOT ─────────────────────────────────────────────────────────
 updateDate(); setInterval(tick, 1000);
 document.getElementById('btn-sheet-link').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
 lsLoadTasks(); renderAll(); renderSLARef();
+loadConfigFromSheet();
 initDropBlocks();
 
 // Attach designer pill listeners
@@ -1054,10 +1105,10 @@ function renderSettingsTypes() {
     btn.addEventListener('click', () => removeType(parseInt(btn.getAttribute('data-index'))));
   });
 }
-function addClient(){const v=document.getElementById('new-client').value.trim();if(!v)return;clients.push(v);lsSave('sla_clients',clients);document.getElementById('new-client').value='';renderClientPills();renderSettingsClients();}
-function removeClient(i){if(selClient===clients[i])selClient='';clients.splice(i,1);lsSave('sla_clients',clients);renderClientPills();renderSettingsClients();}
-function addType(){const v=document.getElementById('new-type').value.trim();if(!v)return;types.push(v);lsSave('sla_types',types);document.getElementById('new-type').value='';renderTypePillsDrop();renderSettingsTypes();}
-function removeType(i){selTypes=selTypes.filter(t=>t!==types[i]);types.splice(i,1);lsSave('sla_types',types);renderTypePillsDrop();renderSettingsTypes();}
+function addClient(){const v=document.getElementById('new-client').value.trim();if(!v)return;clients.push(v);saveConfigToSheet();document.getElementById('new-client').value='';renderClientPills();renderSettingsClients();}
+function removeClient(i){if(selClient===clients[i])selClient='';clients.splice(i,1);saveConfigToSheet();renderClientPills();renderSettingsClients();}
+function addType(){const v=document.getElementById('new-type').value.trim();if(!v)return;types.push(v);saveConfigToSheet();document.getElementById('new-type').value='';renderTypePillsDrop();renderSettingsTypes();}
+function removeType(i){selTypes=selTypes.filter(t=>t!==types[i]);types.splice(i,1);saveConfigToSheet();renderTypePillsDrop();renderSettingsTypes();}
 document.getElementById('new-client').addEventListener('keydown',e=>{if(e.key==='Enter')addClient();});
 document.getElementById('new-type').addEventListener('keydown',e=>{if(e.key==='Enter')addType();});
 
