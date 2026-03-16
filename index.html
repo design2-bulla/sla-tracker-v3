@@ -417,7 +417,7 @@ const SLA_TIMES = {
 };
 
 // ── DEFAULTS ─────────────────────────────────────────────────────
-const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON'];
+const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON','Coffee for U'];
 const DEF_TYPES   = [
   'Estático','Carrusel','Historia','Reel Entrevista','Reel Orgánico',
   'Pantalla o Valla','Sticker','Portada de Reel','Adaptación','Ajuste',
@@ -464,7 +464,12 @@ async function loadConfigFromSheet() {
     const rows = data.values || [];
     const sheetClients = rows.filter(r=>r[0]==='cliente').map(r=>r[1]).filter(Boolean);
     const sheetTypes   = rows.filter(r=>r[0]==='tipo').map(r=>r[1]).filter(Boolean);
-    if (sheetClients.length) clients = sheetClients;
+    if (sheetClients.length) {
+      // Merge defaults not yet in sheet
+      const missingClients = DEF_CLIENTS.filter(c => !sheetClients.includes(c));
+      clients = [...sheetClients, ...missingClients];
+      if (missingClients.length) saveConfigToSheet();
+    }
     if (sheetTypes.length)   types   = sheetTypes;
     renderAll();
   } catch(e) { console.warn('Config load failed', e); }
