@@ -416,6 +416,9 @@ const SLA_TIMES = {
   'Animación - Quemado': [120, 180],
 };
 
+// Tipos donde el SLA se multiplica por cantidad (cada pieza tiene su propio tiempo)
+const SLA_MULTIPLY_QTY = ['Historia', 'Estático', 'Pieza Estática', 'Sticker', 'Portada de Reel'];
+
 // ── DEFAULTS ─────────────────────────────────────────────────────
 const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON','Coffee for U'];
 const DEF_TYPES   = [
@@ -754,7 +757,7 @@ async function syncTaskToSheet(task) {
     await ensureMonthSheet();
     await ensureDaySeparator();
 
-    const slaRef = getSLAMax(task.type) ? getSLAMax(task.type) * (task.qty || 1) : null;
+    const slaRef = getSLAMax(task.type, task.qty||1);
     const durMin = Math.round(task.seconds / 60);
     const pct    = slaRef ? Math.round((durMin / slaRef) * 100) : null;
     const semaforo = pct === null ? '—' : pct <= 100 ? '🟢 OK' : pct <= 150 ? '🟡 Lento' : '🔴 Excedido';
@@ -785,9 +788,13 @@ async function syncTaskToSheet(task) {
 }
 
 // ── SLA LOGIC ─────────────────────────────────────────────────────
-function getSLAMax(type) {
+function getSLAMax(type, qty) {
   for (const [key, range] of Object.entries(SLA_TIMES)) {
-    if (type && type.toLowerCase().includes(key.toLowerCase())) return range[1];
+    if (type && type.toLowerCase().includes(key.toLowerCase())) {
+      const base = range[1];
+      const shouldMultiply = SLA_MULTIPLY_QTY.some(t => type.toLowerCase().includes(t.toLowerCase()));
+      return shouldMultiply && qty > 1 ? base * qty : base;
+    }
   }
   return null;
 }
@@ -835,7 +842,7 @@ function tick() {
       if (el) el.textContent = fmt(at.seconds);
     }
     // Update SLA bar and timer color
-    const slaMax = getSLAMax(at.task.type) ? getSLAMax(at.task.type) * (at.task.qty || 1) : null;
+    const slaMax = getSLAMax(at.task.type, at.task.qty||1);
     if (slaMax) {
       const pct = (at.seconds / 60) / slaMax * 100;
       const bar = document.getElementById(`sla-bar-${at.id}`);
@@ -939,7 +946,7 @@ let activeTasks = []; // array of {id, task, seconds, paused}
 function renderActiveTimers() {
   const container = document.getElementById('active-timers-container');
   container.innerHTML = activeTasks.map(at => {
-    const slaMax = getSLAMax(at.task.type);
+    const slaMax = getSLAMax(at.task.type, at.task.qty||1);
     const slaBarHtml = slaMax ? `<div class="sla-bar-wrap"><div class="sla-bar" id="sla-bar-${at.id}" style="width:0%"></div></div>` : '';
     return `
     <div class="active-timer visible" id="active-timer-${at.id}">
