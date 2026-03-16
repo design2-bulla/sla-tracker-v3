@@ -105,7 +105,7 @@
   .type-pill.anim-pill.active { background: #E35376; color: #fff; }
 
   .form-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
-  .form-selection { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.9; }
+  .form-selection { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); line-height: 1.9; }
   .btn-start { background: #E35376; color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
   .btn-start:hover { background: #cc2d5a; transform: translateY(-1px); }
   .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
@@ -307,8 +307,8 @@
 
       <div class="form-bottom">
         <div class="form-selection">
-          <span style="color:var(--accent)" id="sel-client-display">— Cliente</span> &nbsp;·&nbsp;
-          <span style="color:var(--accent2)" id="sel-type-display">— Tipo</span>
+          <span style="color:#E35376;font-weight:600" id="sel-client-display">— Cliente</span> &nbsp;·&nbsp;
+          <span style="color:#E35376;font-weight:600" id="sel-type-display">— Tipo</span>
         </div>
         <button class="btn-start" id="btn-start" onclick="startTask()">▶ INICIAR TIMER</button>
       </div>
@@ -698,7 +698,7 @@ async function syncTaskToSheet(task) {
     await ensureMonthSheet();
     await ensureDaySeparator();
 
-    const slaRef = getSLAMax(task.type);
+    const slaRef = getSLAMax(task.type) ? getSLAMax(task.type) * (task.qty || 1) : null;
     const durMin = Math.round(task.seconds / 60);
     const pct    = slaRef ? Math.round((durMin / slaRef) * 100) : null;
     const semaforo = pct === null ? '—' : pct <= 100 ? '🟢 OK' : pct <= 150 ? '🟡 Lento' : '🔴 Excedido';
@@ -779,7 +779,7 @@ function tick() {
       if (el) el.textContent = fmt(at.seconds);
     }
     // Update SLA bar and timer color
-    const slaMax = getSLAMax(at.task.type);
+    const slaMax = getSLAMax(at.task.type) ? getSLAMax(at.task.type) * (at.task.qty || 1) : null;
     if (slaMax) {
       const pct = (at.seconds / 60) / slaMax * 100;
       const bar = document.getElementById(`sla-bar-${at.id}`);
