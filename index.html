@@ -707,10 +707,11 @@ async function ensureDaySeparator() {
     const checkRows = checkData.values || [];
     if (checkRows.some(r => r[0] && r[0].includes(todayDate))) return;
 
-    // Insert blank spacer + colored separator row
+    // Insert blank spacer + colored separator row + column headers
     await sheetsAppend([
       ['','','','','','','','','','','','','',''],
-      [todayLabel,'','','','','','','','','','','','','']
+      [todayLabel,'','','','','','','','','','','','',''],
+      ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']
     ]);
 
     // Apply rosa #E35376 color to the separator row
@@ -735,15 +736,28 @@ async function ensureDaySeparator() {
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requests: [{ repeatCell: {
-          range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex, endRowIndex: sepRowIndex + 1, startColumnIndex: 0, endColumnIndex: 14 },
-          cell: { userEnteredFormat: {
-            backgroundColor: { red: 0.890, green: 0.208, blue: 0.463 },
-            textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 11 },
-            horizontalAlignment: 'LEFT'
+        body: JSON.stringify({ requests: [
+          // Rosa for separator row
+          { repeatCell: {
+            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex, endRowIndex: sepRowIndex + 1, startColumnIndex: 0, endColumnIndex: 14 },
+            cell: { userEnteredFormat: {
+              backgroundColor: { red: 0.890, green: 0.208, blue: 0.463 },
+              textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 11 },
+              horizontalAlignment: 'LEFT'
+            }},
+            fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
           }},
-          fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
-        }}]})
+          // Morado claro for headers row (right below separator)
+          { repeatCell: {
+            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex + 1, endRowIndex: sepRowIndex + 2, startColumnIndex: 0, endColumnIndex: 14 },
+            cell: { userEnteredFormat: {
+              backgroundColor: { red: 0.545, green: 0.039, blue: 0.549 },
+              textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 10 },
+              horizontalAlignment: 'CENTER'
+            }},
+            fields: 'userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)'
+          }}
+        ]})
       }
     );
   } catch(e) { console.warn('Day separator failed', e); }
