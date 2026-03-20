@@ -401,7 +401,6 @@ const SLA_TIMES = {
   'Adaptación': [30, 60],
   'Web': [30, 60],
   'Bumper para TV': [360, 420],
-  'Pantalla o Valla': [40, 90],
   'Sticker': [20, 30],
   'Material Impreso': [60, 120],
   'Multiformatos': [60, 120],
@@ -411,7 +410,7 @@ const SLA_TIMES = {
   // Animaciones
   'Animación - Marquesina de Logo': [120, 180],
   'Animación - Contenido Social Media': [60, 90],
-  'Animación - Valla Digital': [40, 90],
+  'Valla Digital': [40, 90],
   'Animación - Bumper': [360, 420],
   'Animación - Quemado': [120, 180],
 };
@@ -423,12 +422,12 @@ const SLA_MULTIPLY_QTY = ['Historia', 'Sticker', 'Portada de Reel'];
 const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON','Coffee for U'];
 const DEF_TYPES   = [
   'Estático','Carrusel','Historia','Reel Entrevista','Reel Orgánico',
-  'Pantalla o Valla','Sticker','Portada de Reel','Adaptación','Ajuste',
+  'Valla Digital','Sticker','Portada de Reel','Adaptación','Ajuste',
   'Ajuste Ortográfico','Ajuste Visual',
   'Web','Bumper para TV','Cuña Radial','Material Impreso','Keyvisual',
   'Video TikTok','Multiformatos',
   'Animación - Marquesina de Logo','Animación - Contenido Social Media',
-  'Animación - Valla Digital','Animación - Bumper','Animación - Quemado'
+  'Animación - Bumper','Animación - Quemado'
 ];
 
 // ── STATE ────────────────────────────────────────────────────────
@@ -499,6 +498,7 @@ let accessToken = null, tokenExpiry = 0;
 updateDate(); setInterval(tick, 1000);
 document.getElementById('btn-sheet-link').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
 lsLoadTasks(); renderAll(); renderSLARef();
+loadActiveTasks();
 loadConfigFromSheet();
 initDropBlocks();
 
@@ -994,6 +994,7 @@ function startTask() {
   const id = Date.now();
   const task = { name, designer:selDesigner, client:selClient||'—', type:selTypes.length?selTypes.join(', '):'—', qty:selQty, category:selCategory||'—', isAjuste, startTime:new Date().toISOString() };
   activeTasks.push({ id, task, seconds:0, paused:false, startedAt:Date.now(), pausedSeconds:0 });
+  saveActiveTasks();
   renderActiveTimers();
 
   document.getElementById('task-name').value='';
@@ -1023,6 +1024,7 @@ function stopTask(id, completed) {
     syncTaskToSheet(task);
   }
   activeTasks.splice(idx, 1);
+  saveActiveTasks();
   renderActiveTimers();
 }
 
@@ -1037,12 +1039,34 @@ function togglePause(id) {
     at.startedAt = Date.now();
   }
   at.paused = !at.paused;
+  saveActiveTasks();
   renderActiveTimers();
 }
 
-function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); lsSaveTasks(); renderTasks(); }
+function saveActiveTasks() {
+  try { sessionStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
+    ...at, startedAt: at.paused ? null : at.startedAt, now: Date.now()
+  })))); } catch(e) {}
+}
 
-// ── RENDER TASKS ─────────────────────────────────────────────────
+function loadActiveTasks() {
+  try {
+    const s = sessionStorage.getItem('sla_active');
+    if (!s) return;
+    const saved = JSON.parse(s);
+    activeTasks = saved.map(at => {
+      // If was running, adjust startedAt to account for time since save
+      if (!at.paused && at.startedAt) {
+        const elapsed = Math.floor((Date.now() - at.now) / 1000);
+        at.seconds = at.pausedSeconds + Math.floor((Date.now() - at.startedAt) / 1000);
+      }
+      return at;
+    });
+    renderActiveTimers();
+  } catch(e) {}
+}
+
+function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); lsSaveTasks(); renderTasks(); }
 function renderTasks() {
   const list=document.getElementById('tasks-list');
   document.getElementById('task-count').textContent=`${tasks.length} tarea${tasks.length!==1?'s':''} registrada${tasks.length!==1?'s':''}`;
