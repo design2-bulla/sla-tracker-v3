@@ -416,7 +416,7 @@ const SLA_TIMES = {
 };
 
 // Tipos donde el SLA se multiplica por cantidad (cada pieza tiene su propio tiempo)
-const SLA_MULTIPLY_QTY = ['Historia', 'Sticker', 'Portada de Reel'];
+const SLA_MULTIPLY_QTY = ['Historia', 'Sticker', 'Portada de Reel', 'Estático', 'Pieza Estática', 'Ajuste'];
 
 // ── DEFAULTS ─────────────────────────────────────────────────────
 const DEF_CLIENTS = ['Novey','Cerro Punta','Delta','TVN','Mamá Oti','Making Bulla','Proyectos Varios','Taco Bell','SALMON','Coffee for U'];
@@ -919,7 +919,7 @@ function renderTypePillsDrop() {
       container.querySelectorAll('.type-pill').forEach(p =>
         p.classList.toggle('active', selTypes.includes(p.getAttribute('data-val')))
       );
-      document.getElementById('drop-type').classList.add('open');
+      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
     };
   });
 }
