@@ -813,8 +813,8 @@ function getSLAMax(type, qty) {
   return null;
 }
 
-function getSLAStatus(seconds, type) {
-  const slaMax = getSLAMax(type);
+function getSLAStatus(seconds, type, qty) {
+  const slaMax = getSLAMax(type, qty||1);
   if (!slaMax) return 'none';
   const min = seconds / 60;
   const pct = (min / slaMax) * 100;
@@ -823,9 +823,9 @@ function getSLAStatus(seconds, type) {
   return 'red';
 }
 
-function getSLABadge(seconds, type) {
-  const status = getSLAStatus(seconds, type);
-  const slaMax = getSLAMax(type);
+function getSLABadge(seconds, type, qty) {
+  const status = getSLAStatus(seconds, type, qty||1);
+  const slaMax = getSLAMax(type, qty||1);
   const min = Math.round(seconds / 60);
   const pct = slaMax ? Math.round((min / slaMax) * 100) : null;
   const labels = { green:'🟢 En SLA', yellow:'🟡 Lento', red:'🔴 Excedido', none:'— Sin ref.' };
@@ -1100,7 +1100,7 @@ function renderTasks() {
           <span class="tag tag-done">${t.status}</span>
           ${t.client!=='—'?`<span class="tag tag-client">${esc(t.client)}</span>`:''}
           ${t.isAjuste?`<span class="badge-ajuste">AJUSTE</span>`:''}
-          ${getSLABadge(t.seconds, t.type)}
+          ${getSLABadge(t.seconds, t.type, t.qty||1)}
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px">${esc(t.designer)}</div>
       </div>
@@ -1116,9 +1116,9 @@ function renderTasks() {
   });
 
   const total=tasks.reduce((a,t)=>a+t.seconds,0);
-  const greens=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='green').length;
-  const yellows=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='yellow').length;
-  const reds=tasks.filter(t=>getSLAStatus(t.seconds,t.type)==='red').length;
+  const greens=tasks.filter(t=>getSLAStatus(t.seconds,t.type,t.qty||1)==='green').length;
+  const yellows=tasks.filter(t=>getSLAStatus(t.seconds,t.type,t.qty||1)==='yellow').length;
+  const reds=tasks.filter(t=>getSLAStatus(t.seconds,t.type,t.qty||1)==='red').length;
   document.getElementById('total-time').textContent=fmt(total);
   document.getElementById('done-count').textContent=tasks.filter(t=>t.status==='Completada').length;
   document.getElementById('green-count').textContent=greens;
