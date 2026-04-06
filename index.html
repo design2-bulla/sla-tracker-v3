@@ -871,7 +871,7 @@ function tick() {
       }
       if (label) {
         const remaining = slaMax - Math.floor(at.seconds / 60);
-        label.textContent = pct >= 100 ? '⚠️ SLA excedido' : pct >= 80 ? `⏳ ${remaining} min restantes` : `SLA: ${slaMax} min`;
+        label.textContent = pct >= 100 ? '⚠️ SLA excedido' : pct >= 80 ? `⏳ ${remaining} min restantes` : `SLA: ${slaMax} min${at.task.qty>1?' ('+at.task.qty+'×)':''}`;
         label.style.color = pct >= 100 ? '#ff4444' : pct >= 80 ? '#f6bf4a' : 'rgba(255,255,255,0.5)';
       }
     }
@@ -974,7 +974,7 @@ function renderActiveTimers() {
         </div>
         <div style="text-align:right">
           <div class="timer-display" id="timer-display-${at.id}">${fmt(at.seconds)}</div>
-          <div id="sla-label-${at.id}" style="font-family:'DM Mono',monospace;font-size:10px;margin-top:4px;color:rgba(255,255,255,0.5);">${slaMax ? `SLA: ${slaMax} min` : ''}</div>
+          <div id="sla-label-${at.id}" style="font-family:'DM Mono',monospace;font-size:10px;margin-top:4px;color:rgba(255,255,255,0.5);">${slaMax ? `SLA: ${slaMax} min${at.task.qty>1?' ('+at.task.qty+'×)':''}` : ''}</div>
         </div>
       </div>
       ${slaBarHtml}
