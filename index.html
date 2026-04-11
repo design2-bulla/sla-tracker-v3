@@ -391,9 +391,9 @@ const SERVICE_ACCOUNT = {
 
 // ── SLA TIEMPOS (minutos, rango: [min, max]) ──────────────────────
 const SLA_TIMES = {
-  'Estático': [30, 60], 'Pieza Estática': [30, 60],
+  'Estático': [30, 60], 'Estáticos': [30, 60], 'Pieza Estática': [30, 60],
   'Carrusel': [60, 120],
-  'Historia': [20, 30],
+  'Historia': [20, 30], 'Historias': [20, 30],
   'Reel Orgánico': [60, 120], 'Reel Entrevista': [90, 180],
   'Portada de Reel': [30, 60],
   'Ajuste': [20, 60], 'Ajustes': [20, 60],
@@ -803,10 +803,14 @@ async function syncTaskToSheet(task) {
 
 // ── SLA LOGIC ─────────────────────────────────────────────────────
 function getSLAMax(type, qty) {
+  if (!type) return null;
+  const typeLow = type.toLowerCase();
   for (const [key, range] of Object.entries(SLA_TIMES)) {
-    if (type && type.toLowerCase().includes(key.toLowerCase())) {
+    const keyLow = key.toLowerCase();
+    // Match if type includes key OR key includes type (handles singular/plural)
+    if (typeLow.includes(keyLow) || keyLow.includes(typeLow.split(',')[0].trim())) {
       const base = range[1];
-      const shouldMultiply = SLA_MULTIPLY_QTY.some(t => type.toLowerCase().includes(t.toLowerCase()));
+      const shouldMultiply = SLA_MULTIPLY_QTY.some(t => typeLow.includes(t.toLowerCase()) || t.toLowerCase().includes(typeLow.split(',')[0].trim()));
       return shouldMultiply && qty > 1 ? base * qty : base;
     }
   }
