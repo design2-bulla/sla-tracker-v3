@@ -9,9 +9,22 @@
   :root {
     --bg: #ffffff; --surface: #8a0fa5; --card: #6a0980; --border: rgba(246,191,74,0.25);
     --accent: #f6bf4a; --accent2: #fff0c0; --text: #fff8ee; --muted: rgba(255,240,200,0.55);
+    --form-bg: #ffffff; --form-border: #750a8b; --input-bg: #ffffff; --input-text: #2a0035;
+    --label-color: #750a8b; --section-label: #750a8b; --day-text: #2a0035;
+    --task-card-bg: #6a0980; --summary-bg: #6a0980; --settings-bg: #ffffff; --settings-border: #750a8b;
+    --settings-item-bg: #ffffff; --settings-text: #2a0035;
     --danger: #ff8fa3; --green: #7fffc4; --orange: #ffd580; --purple: #e0b0ff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  [data-theme="dark"] {
+    --bg: #0f0015; --surface: #2a0040; --card: #1e0030; --border: rgba(246,191,74,0.2);
+    --accent: #f6bf4a; --accent2: #3a2a00; --text: #fff8ee; --muted: rgba(255,240,200,0.5);
+    --form-bg: #1e0030; --form-border: #9B27AF; --input-bg: #2a0040; --input-text: #fff8ee;
+    --label-color: #C063A8; --section-label: #C063A8; --day-text: #fff8ee;
+    --task-card-bg: #1e0030; --summary-bg: #1e0030; --settings-bg: #1e0030; --settings-border: #9B27AF;
+    --settings-item-bg: #2a0040; --settings-text: #fff8ee;
+  }
   body { background: var(--bg); color: #2a0035; font-family: 'Syne', sans-serif; min-height: 100vh; overflow-x: hidden; }
   body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(117,10,139,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(117,10,139,0.05) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
   .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
@@ -19,9 +32,9 @@
   .logo { display: flex; align-items: center; }
   .logo-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; color: #E35376; font-family: 'Syne', sans-serif; line-height: 1; }
   .logo-sub { font-size: 11px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
-  .date-display { font-family: 'DM Mono', monospace; font-size: 13px; color: #750a8b; text-align: right; }
+  .date-display { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--label-color); text-align: right; }
   .date-display span { display: block; color: #2a0035; font-size: 15px; font-weight: 500; }
-  .sync-status { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 11px; color: #750a8b; padding: 6px 12px; background: #f5f0ff; border: 1px solid rgba(117,10,139,0.2); border-radius: 20px; }
+  .sync-status { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--label-color); padding: 6px 12px; background: var(--form-bg); border: 1px solid var(--form-border); border-radius: 20px; }
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
   .sync-dot.synced { background: var(--green); box-shadow: 0 0 6px var(--green); }
   .sync-dot.syncing { background: var(--orange); animation: pulse 1s infinite; }
@@ -29,29 +42,29 @@
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
   /* Tabs */
-  .tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 5px; margin-bottom: 24px; width: fit-content; flex-wrap: wrap; }
-  .tab { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
-  .tab.active { background: #E35376; color: #fff; }
-  .tab:hover:not(.active) { color: var(--text); }
+  .tabs { display: flex; gap: 4px; background: linear-gradient(135deg,#9B27AF,#3DBFB0); border-radius: 14px; padding: 5px; margin-bottom: 24px; width: fit-content; flex-wrap: wrap; box-shadow: 0 4px 20px rgba(155,39,175,0.3); }
+  .tab { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .tab.active { background: rgba(255,255,255,0.22); color: #fff; backdrop-filter: blur(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .tab:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.12); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
 
   /* User bar */
-  .user-bar { background: #ffffff; border: 3px solid #750a8b; border-radius: 12px; padding: 14px 20px; margin-bottom: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .user-bar label { font-size: 11px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .user-bar { background: var(--form-bg); border: 3px solid var(--form-border); border-radius: 12px; padding: 14px 20px; margin-bottom: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .user-bar label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--label-color); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
   .designer-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-  .designer-pill { font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid #E35376; background: #E35376; color: #fff; cursor: pointer; transition: all 0.15s; }
-  .designer-pill:hover { border-color: #c2275e; background: #c2275e; color: #fff; }
+  .designer-pill { font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid #3DBFB0; background: #3DBFB0; color: #fff; cursor: pointer; transition: all 0.15s; }
+  .designer-pill:hover { border-color: #2da898; background: #2da898; color: #fff; }
   .designer-pill.active { background: #750a8b; border-color: #750a8b; color: #fff; font-weight: 600; }
 
   /* Form */
-  .section-label { font-size: 10px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
-  .task-form { background: #ffffff; border: 3px solid #750a8b; border-radius: 16px; padding: 24px; margin-bottom: 22px; }
+  .section-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--section-label); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .task-form { background: var(--form-bg); border: 3px solid var(--form-border); border-radius: 16px; padding: 24px; margin-bottom: 22px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
   @media(max-width:700px){.form-grid{grid-template-columns:1fr;}}
-  .field label { display: block; font-size: 10px; font-family: 'DM Mono', monospace; color: #750a8b; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
-  .field input { width: 100%; background: #ffffff; border: 1px solid rgba(117,10,139,0.2); color: #2a0035; font-family: 'Syne', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+  .field label { display: block; font-size: 10px; font-family: 'DM Mono', monospace; color: var(--label-color); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .field input { width: 100%; background: var(--input-bg); color: var(--input-text); border: 1px solid rgba(117,10,139,0.2); color: #2a0035; font-family: 'Syne', sans-serif; font-size: 14px; padding: 10px 14px; border-radius: 8px; outline: none; transition: border-color 0.2s; }
   .field input:focus { border-color: #E35376; }
 
   /* Pills */
@@ -67,10 +80,10 @@
   .ajuste-toggle input { display: none; }
   .toggle-track { width: 40px; height: 22px; background: #d0b0e0; border-radius: 11px; transition: background 0.2s; position: relative; flex-shrink: 0; border: 1px solid #9b3bb5; }
   .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #750a8b; border-radius: 50%; transition: all 0.2s; }
-  .ajuste-toggle input:checked ~ .toggle-track { background: #E35376; border: 1px solid #c2275e; }
+  .ajuste-toggle input:checked ~ .toggle-track { background: #3DBFB0; border: 1px solid #2da898; }
   .ajuste-toggle input:checked ~ .toggle-track .toggle-thumb { transform: translateX(17px); background: #ffffff; }
-  .ajuste-label { font-size: 13px; font-weight: 600; color: #750a8b; transition: color 0.2s; }
-  .ajuste-toggle input:checked ~ .ajuste-label { color: #E35376; }
+  .ajuste-label { font-size: 13px; font-weight: 600; color: var(--label-color); transition: color 0.2s; }
+  .ajuste-toggle input:checked ~ .ajuste-label { color: #3DBFB0; }
   .badge-ajuste { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 4px; background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); letter-spacing: 1px; text-transform: uppercase; }
 
   .qty-preset { font-family: 'DM Mono', monospace; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; }
@@ -82,33 +95,33 @@
   .drop-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; position: relative; }
   @media(max-width:600px){ .drop-row { grid-template-columns: 1fr; } }
   .drop-block { border: 1px solid var(--border); border-radius: 10px; overflow: visible; transition: border-color 0.2s; position: relative; }
-  .drop-block.open { border-color: #E35376; }
-  .drop-body-float { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 320px; z-index: 50; border-radius: 10px; border: 1px solid #E35376; background: var(--card); padding: 14px 16px; display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .drop-block.open { border-color: #F5C842; }
+  .drop-body-float { position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: max-content; max-width: 320px; z-index: 50; border-radius: 10px; border: 1px solid #F5C842; background: var(--card); padding: 14px 16px; display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
   .drop-block.open .drop-body-float { display: block; animation: fadeIn 0.15s ease; }
   .drop-header { width: 100%; background: var(--surface); border: none; color: var(--text); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 11px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; transition: background 0.15s; text-align: left; border-radius: 9px; }
   .drop-header:hover { background: rgba(0,0,0,0.1); }
   .drop-block.open .drop-header { background: rgba(227,83,118,0.15); }
   .drop-label { color: #ffffff; font-size: 12px; white-space: nowrap; font-weight: 600; }
-  .drop-block.open .drop-label { color: #f6bf4a; }
+  .drop-block.open .drop-label { color: #F5C842; }
   .drop-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-width: 0; }
   .drop-val { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
-  .drop-block.open .drop-val { color: #f6bf4a; }
+  .drop-block.open .drop-val { color: #F5C842; }
   .drop-arrow { font-size: 11px; color: rgba(255,255,255,0.7); transition: transform 0.2s; flex-shrink: 0; }
-  .drop-block.open .drop-arrow { transform: rotate(90deg); color: #f6bf4a; }
+  .drop-block.open .drop-arrow { transform: rotate(90deg); color: #F5C842; }
   .cat-pill, .type-pill { font-family: 'DM Mono', monospace; font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; white-space: nowrap; display: inline-block; margin: 3px; }
   .cat-pill:hover { border-color: var(--accent); color: var(--text); }
-  .cat-pill.active { background: rgba(227,83,118,0.25); border-color: #E35376; color: #fff; font-weight: 500; }
+  .cat-pill.active { background: #F57C20; border-color: #F57C20; color: #fff; font-weight: 500; }
   .type-pill:hover { border-color: var(--accent2); color: var(--text); }
-  .type-pill.active { background: rgba(227,83,118,0.25); border-color: #E35376; color: #fff; font-weight: 500; }
+  .type-pill.active { background: #F57C20; border-color: #F57C20; color: #fff; font-weight: 500; }
   .type-pill.anim-pill { border-color: #E35376; color: #E35376; }
   .type-pill.anim-pill:hover { background: rgba(227,83,118,0.1); }
   .type-pill.anim-pill.active { background: #E35376; color: #fff; }
 
   .form-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 16px; }
   .form-selection { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); line-height: 1.9; }
-  .btn-start { background: #E35376; color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
-  .btn-start:hover { background: #cc2d5a; transform: translateY(-1px); }
-  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-start { background: linear-gradient(135deg,#F57C20,#E35376); color: #fff; border: none; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; position: relative; overflow: hidden; animation: btn-pulse 2.5s infinite; box-shadow: 0 4px 20px rgba(245,124,32,0.4); }
+  .btn-start:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 28px rgba(245,124,32,0.55); animation: none; }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; animation: none; box-shadow: none; }
 
   /* Active timer */
   .active-timer { background: #750a8b; border: 3px solid #E35376; border-radius: 16px; padding: 24px; margin-bottom: 22px; display: none; animation: fadeIn 0.3s ease; }
@@ -117,11 +130,11 @@
   .timer-task-name { font-size: 18px; font-weight: 700; color: var(--accent); }
   .timer-meta { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .timer-display { font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500; color: var(--accent); letter-spacing: 2px; line-height: 1; transition: color 0.5s; }
-  .timer-display.sla-warning { color: #f6bf4a; animation: pulse 1s infinite; }
+  .timer-display.sla-warning { color: #F5C842; animation: pulse 1s infinite; }
   .timer-display.sla-danger  { color: #ff4444; animation: pulse 0.6s infinite; }
   .sla-bar-wrap { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 10px; overflow: hidden; }
   .sla-bar { height: 4px; border-radius: 2px; transition: width 0.5s, background 0.5s; background: #4caf50; }
-  .pulse-dot { display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; margin-right: 8px; animation: pulse 1.2s infinite; vertical-align: middle; }
+  .pulse-dot { display: inline-block; width: 8px; height: 8px; background: #F5C842; border-radius: 50%; margin-right: 8px; animation: pulse 1.2s infinite; vertical-align: middle; }
   .timer-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
   .btn-stop { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
   .btn-stop:hover { background: rgba(255,92,92,0.1); }
@@ -131,7 +144,7 @@
   .tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
   .task-count { font-family: 'DM Mono', monospace; font-size: 12px; color: #750a8b; margin-top: 4px; }
   .tasks-list { display: flex; flex-direction: column; gap: 10px; }
-  .task-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 14px; animation: fadeIn 0.25s ease; }
+  .task-card { background: var(--task-card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 14px; animation: fadeIn 0.25s ease; }
   @media(max-width:600px){.task-card{grid-template-columns:1fr;}}
   .task-card-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
   .task-card-meta { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
@@ -153,7 +166,7 @@
   .btn-delete:hover { color: var(--danger); }
 
   /* Summary */
-  .summary { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 22px; display: flex; gap: 28px; flex-wrap: wrap; }
+  .summary { background: var(--summary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 22px; display: flex; gap: 28px; flex-wrap: wrap; }
   .summary-item { display: flex; flex-direction: column; gap: 4px; }
   .summary-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
   .summary-value { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; color: var(--accent); }
@@ -162,7 +175,7 @@
   .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
 
   /* Settings */
-  .settings-card { background: #ffffff; border: 3px solid #750a8b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+  .settings-card { background: var(--settings-bg); border: 3px solid var(--settings-border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
   .settings-card h3 { font-size: 15px; font-weight: 700; color: #750a8b; margin-bottom: 6px; }
   .settings-card p { font-size: 12px; color: #9b3bb5; font-family: 'DM Mono', monospace; margin-bottom: 16px; }
   .settings-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; max-height: 320px; overflow-y: auto; }
@@ -182,6 +195,60 @@
   .toast.success { border-color: var(--green); color: var(--green); }
   .toast.error { border-color: var(--danger); color: var(--danger); }
   .toast.warning { border-color: var(--orange); color: var(--orange); }
+  /* DARK MODE OVERRIDES */
+  [data-theme="dark"] .nov-modal { background: #1e0030; }
+  [data-theme="dark"] .nov-body { background: #1e0030; }
+  [data-theme="dark"] .nov-item { border-bottom-color: rgba(255,255,255,0.08); }
+  [data-theme="dark"] .nov-item-title { color: #fff8ee; }
+  [data-theme="dark"] .nov-item-desc { color: rgba(255,240,200,0.6); }
+  [data-theme="dark"] .nov-footer { background: #1e0030; }
+  [data-theme="dark"] .field input { border-color: rgba(192,99,168,0.4); }
+  [data-theme="dark"] .field input::placeholder { color: rgba(255,240,200,0.3); }
+  [data-theme="dark"] .task-form { border-color: #9B27AF; }
+  [data-theme="dark"] .user-bar { border-color: #9B27AF; }
+  [data-theme="dark"] .settings-card { background: #1e0030 !important; border-color: #9B27AF !important; }
+  [data-theme="dark"] .settings-item { background: #2a0040 !important; color: #fff8ee !important; }
+  [data-theme="dark"] .summary-stat span:first-child { color: rgba(255,240,200,0.5); }
+  [data-theme="dark"] .drop-body-float { background: #2a0040; }
+
+  /* LUNCH WARNING */
+  .lunch-banner { position:fixed;top:0;left:0;right:0;z-index:8888;background:linear-gradient(135deg,#F57C20,#F5C842);padding:10px 20px;display:none;align-items:center;justify-content:center;gap:12px;box-shadow:0 4px 20px rgba(245,124,32,0.4); }  .lunch-banner.show { display:flex; }
+  .lunch-text { font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;letter-spacing:0.3px; }
+  .lunch-sub { font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.85); }
+  @keyframes lunch-blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .lunch-icon { font-size:22px;animation:lunch-blink 1.2s infinite; }
+  .lunch-dismiss { background:rgba(255,255,255,0.25);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;margin-left:8px;transition:background 0.15s; }
+  .lunch-dismiss:hover { background:rgba(255,255,255,0.4); }
+</style>
+  .nov-overlay { position:fixed;inset:0;background:rgba(20,0,35,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
+  .nov-modal { background:#fff;border-radius:20px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:nov-in 0.35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes btn-pulse {
+    0%,100% { box-shadow: 0 4px 20px rgba(245,124,32,0.4); transform: scale(1); }
+    50% { box-shadow: 0 4px 30px rgba(245,124,32,0.7), 0 0 0 6px rgba(245,124,32,0.15); transform: scale(1.01); }
+  }
+  @keyframes btn-shine {
+    0% { left: -100%; }
+    100% { left: 200%; }
+  }
+  .btn-start::after { content:''; position:absolute; top:0; left:-100%; width:60%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent); animation:btn-shine 2.5s infinite; }
+  @keyframes nov-in { from{opacity:0;transform:scale(0.85) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .nov-header { background:linear-gradient(135deg,#C063A8,#9B27AF);padding:22px 24px 18px;position:relative; }
+  .nov-tag { font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:6px; }
+  .nov-title { font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.2; }
+  .nov-date { font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.6);margin-top:4px; }
+  .nov-close { position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:background 0.15s; }
+  .nov-close:hover { background:rgba(255,255,255,0.35); }
+  .nov-body { padding:20px 24px; }
+  .nov-item { display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f0e8f7; }
+  .nov-item:last-child { border-bottom:none; }
+  .nov-dot { width:10px;height:10px;border-radius:50%;margin-top:4px;flex-shrink:0; }
+  .nov-item-title { font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#2a0035;margin-bottom:3px; }
+  .nov-item-desc { font-family:'DM Mono',monospace;font-size:11px;color:#777;line-height:1.7; }
+  .nov-footer { padding:0 24px 20px; }
+  .nov-btn { width:100%;background:linear-gradient(135deg,#F57C20,#E35376);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:12px;border-radius:12px;cursor:pointer;transition:opacity 0.15s; }
+  .nov-btn:hover { opacity:0.9; }
+  .nov-palette { display:flex;gap:6px;margin-top:14px;margin-bottom:4px; }
+  .nov-palette span { flex:1;height:6px;border-radius:10px; }
 </style>
 </head>
 <body>
@@ -216,6 +283,7 @@
     <button class="tab" onclick="switchTab('clientes')">🏢 Clientes</button>
     <button class="tab" onclick="switchTab('tipos')">🎨 Tipos</button>
     <button class="tab" onclick="switchTab('sla')">📋 SLA Ref.</button>
+    <button class="tab" onclick="switchTab('ayuda')">❓ Ayuda</button>
   </div>
 
   <!-- TAB TRACKER -->
@@ -224,7 +292,7 @@
       <label>👤 DISEÑADOR</label>
       <div class="designer-pills">
         <span class="designer-pill">Joel Tapia</span>
-        <span class="designer-pill">Hector Chong</span>
+        <span class="designer-pill">Jonathan Jovane</span>
         <span class="designer-pill">Ana Arriaga</span>
       </div>
     </div>
@@ -372,12 +440,297 @@
       </div>
     </div>
   </div>
+
+  <!-- TAB AYUDA -->
+  <div class="tab-panel" id="tab-ayuda">
+    <div class="settings-card">
+      <h3>❓ Centro de Ayuda</h3>
+      <p>Soluciones rápidas para los problemas más comunes del SLA Tracker.</p>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:20px;">
+
+        <!-- Issue 1 -->
+        <div style="border:2px solid #f6bf4a;border-radius:12px;overflow:hidden;">
+          <div style="background:#f6bf4a;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h1')">
+            <span style="font-size:16px;">🔴</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#2a0035;font-size:13px;">Mi tarea aparece como excedida (🔴) pero no debería</span>
+            <span style="margin-left:auto;color:#2a0035;font-weight:700;" id="h1-arrow">▸</span>
+          </div>
+          <div id="h1" style="display:none;padding:14px 16px;background:#fffdf0;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa más común:</strong> Olvidaste pausar el timer durante el almuerzo o una pausa, y ese tiempo se sumó a la tarea.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Siempre presiona <strong>⏸ PAUSAR</strong> antes de salir al almuerzo o tomar un descanso.</li>
+              <li>Si ya pasó, completa la tarea normalmente — el administrador puede corregir el registro en el Sheet.</li>
+              <li>Agrega una nota en el nombre de la tarea como "(sin pausa almuerzo)" para que quede documentado.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Issue 2 -->
+        <div style="border:2px solid #750a8b;border-radius:12px;overflow:hidden;">
+          <div style="background:#750a8b;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h2')">
+            <span style="font-size:16px;">👤</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">No aparece un cliente en la lista</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="h2-arrow">▸</span>
+          </div>
+          <div id="h2" style="display:none;padding:14px 16px;background:#f8f4fc;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa:</strong> El cliente no ha sido agregado aún a la lista compartida, o la app no ha sincronizado con el Sheet todavía.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Recarga la página con <strong>Ctrl+Shift+R</strong> (PC) o <strong>Cmd+Shift+R</strong> (Mac).</li>
+              <li>Si sigue sin aparecer, ve a la pestaña <strong>🏢 Clientes</strong> y agrégalo tú mismo — se guarda para todos automáticamente.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Issue 3 -->
+        <div style="border:2px solid #E35376;border-radius:12px;overflow:hidden;">
+          <div style="background:#E35376;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h3')">
+            <span style="font-size:16px;">📊</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">El SLA de historias o estáticos no se multiplica por cantidad</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="h3-arrow">▸</span>
+          </div>
+          <div id="h3" style="display:none;padding:14px 16px;background:#fff5f7;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa:</strong> El SLA de Historias, Estáticos, Stickers y Portadas de Reel se multiplica automáticamente por la cantidad de piezas. Si ves un SLA fijo, puede ser que la cantidad no se haya registrado correctamente.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Antes de iniciar el timer, asegúrate de ajustar la <strong>cantidad de piezas</strong> con los botones − y + en el formulario.</li>
+              <li>El timer mostrará <strong>SLA: X min (Npzs×)</strong> confirmando que la multiplicación está activa.</li>
+              <li>Si el tipo seleccionado dice "Historias" (plural) y no reconoce el SLA, recarga con <strong>Ctrl+Shift+R</strong>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Issue 4 -->
+        <div style="border:2px solid #4caf50;border-radius:12px;overflow:hidden;">
+          <div style="background:#4caf50;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h4')">
+            <span style="font-size:16px;">⏱</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">El timer se pausó solo o perdió tiempo</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="h4-arrow">▸</span>
+          </div>
+          <div id="h4" style="display:none;padding:14px 16px;background:#f0fff4;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa:</strong> El navegador durmió la pestaña cuando estaba en segundo plano o la pantalla se apagó. El tracker usa tiempo real del reloj para compensar esto, pero si la sesión se cerró completamente puede haber pérdida.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Mantén la pestaña del tracker <strong>activa y visible</strong> mientras trabajas.</li>
+              <li>No cierres el navegador con tareas activas — usa <strong>⏸ PAUSAR</strong> si necesitas parar.</li>
+              <li>Si recargaste accidentalmente con una tarea corriendo, el timer se recupera automáticamente desde donde estaba.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Issue 5 -->
+        <div style="border:2px solid #2196f3;border-radius:12px;overflow:hidden;">
+          <div style="background:#2196f3;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h5')">
+            <span style="font-size:16px;">📅</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">El separador del día se repite varias veces en el Sheet</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="h5-arrow">▸</span>
+          </div>
+          <div id="h5" style="display:none;padding:14px 16px;background:#f0f7ff;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa:</strong> Varios diseñadores abrieron la app casi al mismo tiempo al inicio del día antes de que alguien completara la primera tarea.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Borra manualmente las filas duplicadas en el Sheet — deja solo la primera.</li>
+              <li>El separador ahora se inserta solo al <strong>completar la primera tarea del día</strong>, no al abrir la app, así que no debería repetirse.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Issue 6 -->
+        <div style="border:2px solid #9c27b0;border-radius:12px;overflow:hidden;">
+          <div style="background:#9c27b0;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('h6')">
+            <span style="font-size:16px;">🔄</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">La app no carga o queda en "Conectando..."</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="h6-arrow">▸</span>
+          </div>
+          <div id="h6" style="display:none;padding:14px 16px;background:#fdf5ff;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;"><strong>Causa:</strong> Problema de conexión a internet o el token de acceso a Google expiró.</p>
+            <p style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#750a8b;margin-bottom:6px;">¿Qué hacer?</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Verifica tu conexión a internet.</li>
+              <li>Recarga la página con <strong>Ctrl+Shift+R</strong>.</li>
+              <li>Si persiste, cierra y abre el navegador completamente.</li>
+              <li>Si ninguna de las anteriores funciona, avísale al administrador.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;padding:14px 16px;background:#f0e8f7;border-radius:10px;font-family:'DM Mono',monospace;font-size:11px;color:#750a8b;line-height:1.8;">
+        💡 <strong>Tip general:</strong> Ante cualquier comportamiento extraño, lo primero siempre es <strong>Ctrl+Shift+R</strong> para recargar la app completamente. Si el problema persiste, contáctale al administrador.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LUNCH WARNING BANNER -->
+<div class="lunch-banner" id="lunch-banner">
+  <span class="lunch-icon">🍽️</span>
+  <div>
+    <div class="lunch-text">¡Es hora de almuerzo! (12:00 – 1:00 PM)</div>
+    <div class="lunch-sub">Recuerda poner ⏸ PAUSA en tu tarea activa antes de salir</div>
+  </div>
+  <button class="lunch-dismiss" onclick="dismissLunch()">Ya pausé ✓</button>
+</div>
+
+
+<!-- VERSION + THEME TOGGLE -->
+<div style="position:fixed;bottom:12px;right:16px;display:flex;align-items:center;gap:8px;z-index:999;">
+  <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo" style="background:rgba(117,10,139,0.15);border:1px solid rgba(117,10,139,0.3);color:#750a8b;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🌙</button>
+  <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(117,10,139,0.5);letter-spacing:1px;">v2.4.0</span>
+</div>
+
+<div class="nov-overlay" id="nov-overlay" style="display:none;">
+  <div class="nov-modal">
+    <div class="nov-header">
+      <button class="nov-close" onclick="closeNovedades()">✕</button>
+      <div class="nov-tag">📢 Making Bulla · SLA Tracker</div>
+      <div class="nov-title" id="nov-title">Novedades</div>
+      <div class="nov-date" id="nov-date"></div>
+      <div class="nov-palette">
+        <span style="background:#E35376"></span>
+        <span style="background:#3DBFB0"></span>
+        <span style="background:#F5C842"></span>
+        <span style="background:#9B27AF"></span>
+        <span style="background:#F57C20"></span>
+      </div>
+    </div>
+    <div class="nov-body" id="nov-body"></div>
+    <div class="nov-footer">
+      <button class="nov-btn" onclick="closeNovedades()">¡Entendido! 👊</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CREDENCIALES GOOGLE SHEETS ────────────────────────────────────
+
+// ── THEME ─────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('sla_theme', newTheme);
+  document.getElementById('theme-toggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+  // Update version badge color in dark mode
+  const badge = document.getElementById('theme-toggle');
+  if (newTheme === 'dark') {
+    badge.style.background = 'rgba(192,99,168,0.2)';
+    badge.style.borderColor = 'rgba(192,99,168,0.4)';
+    badge.style.color = '#C063A8';
+  } else {
+    badge.style.background = 'rgba(117,10,139,0.15)';
+    badge.style.borderColor = 'rgba(117,10,139,0.3)';
+    badge.style.color = '#750a8b';
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('sla_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+  if (saved === 'dark') {
+    const btn = document.getElementById('theme-toggle');
+    btn.style.background = 'rgba(192,99,168,0.2)';
+    btn.style.borderColor = 'rgba(192,99,168,0.4)';
+    btn.style.color = '#C063A8';
+  }
+}
+
+// ── LUNCH WARNING ─────────────────────────────────────────────────
+let lunchDismissed = false;
+
+function checkLunch() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const isLunch = (h === 12) || (h === 13 && m === 0);
+  const banner = document.getElementById('lunch-banner');
+  if (isLunch && !lunchDismissed) {
+    banner.classList.add('show');
+  } else if (!isLunch) {
+    banner.classList.remove('show');
+    lunchDismissed = false; // reset for tomorrow
+  }
+}
+
+function dismissLunch() {
+  lunchDismissed = true;
+  document.getElementById('lunch-banner').classList.remove('show');
+}
+
+// Check every 30 seconds
+setInterval(checkLunch, 30000);
+checkLunch(); // check immediately on load
+
+// ── NOVEDADES ─────────────────────────────────────────────────────
+// Para publicar una novedad: edita NOVEDADES_CONFIG abajo
+// id: identificador único (cámbialo cada vez que quieras mostrar el popup de nuevo)
+// title: título del popup
+// date: fecha visible
+// items: lista de novedades [ { color, title, desc } ]
+// colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
+
+const NOVEDADES_CONFIG = {
+  id: 'nov-may-2026-v2',
+  title: '🎉 Actualizaciones del Tracker',
+  date: 'Mayo 2026 · v2.4.0',
+  items: [
+    {
+      color: '#9B27AF',
+      title: '🌙 Modo oscuro disponible',
+      desc: 'Activa el modo oscuro con el botón 🌙 en la esquina inferior derecha. Tu preferencia se guarda automáticamente.'
+    },
+    {
+      color: '#3DBFB0',
+      title: 'Nuevo diseñador: Jonathan Jovane',
+      desc: 'Bienvenido Jonathan al equipo. Ya está disponible en el selector de diseñadores.'
+    },
+    {
+      color: '#E35376',
+      title: 'Pestaña de Ayuda disponible',
+      desc: 'Agregamos ❓ Ayuda con soluciones a los problemas más comunes. Consúltala antes de escribirle al admin.'
+    },
+    {
+      color: '#F5C842',
+      title: 'Recuerda pausar en el almuerzo',
+      desc: 'Aparece un aviso automático a las 12PM. Presiona ⏸ PAUSAR antes de salir a almorzar.'
+    },
+    {
+      color: '#F57C20',
+      title: 'SLA multiplica por cantidad de piezas',
+      desc: 'Historias, estáticos, stickers y portadas de reel calculan el SLA multiplicado por cantidad. Ajusta bien el número antes de iniciar.'
+    },
+  ]
+};
+
+function initNovedades() {
+  const seen = localStorage.getItem('nov_seen_' + NOVEDADES_CONFIG.id);
+  if (seen) return; // already seen this version
+  document.getElementById('nov-title').textContent = NOVEDADES_CONFIG.title;
+  document.getElementById('nov-date').textContent = NOVEDADES_CONFIG.date;
+  document.getElementById('nov-body').innerHTML = NOVEDADES_CONFIG.items.map(item => `
+    <div class="nov-item">
+      <div class="nov-dot" style="background:${item.color}"></div>
+      <div>
+        <div class="nov-item-title">${item.title}</div>
+        <div class="nov-item-desc">${item.desc}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('nov-overlay').style.display = 'flex';
+}
+
+function closeNovedades() {
+  localStorage.setItem('nov_seen_' + NOVEDADES_CONFIG.id, '1');
+  const overlay = document.getElementById('nov-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.25s';
+  setTimeout(() => overlay.style.display = 'none', 250);
+}
 const SHEET_ID = '19W5pj3WsF_yue7ehH7TnZB01OR-YsIDIRdWN_PHwSug';
 const SERVICE_ACCOUNT = {
   "type":"service_account",
@@ -500,6 +853,8 @@ document.getElementById('btn-sheet-link').href = `https://docs.google.com/spread
 lsLoadTasks(); renderAll(); renderSLARef();
 loadActiveTasks();
 loadConfigFromSheet();
+initTheme();
+initNovedades();
 initDropBlocks();
 
 // Attach designer pill listeners
@@ -840,10 +1195,18 @@ function getSLABadge(seconds, type, qty) {
 
 // ── TABS ──────────────────────────────────────────────────────────
 function switchTab(name) {
-  const names = ['tracker','clientes','tipos','sla'];
+  const names = ['tracker','clientes','tipos','sla','ayuda'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
+}
+
+function toggleHelp(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id+'-arrow');
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▸' : '▾';
 }
 
 // ── CLOCK ────────────────────────────────────────────────────────
