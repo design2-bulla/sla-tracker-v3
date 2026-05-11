@@ -124,8 +124,10 @@
   .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; animation: none; box-shadow: none; }
 
   /* Active timer */
-  .active-timer { background: #750a8b; border: 3px solid #E35376; border-radius: 16px; padding: 24px; margin-bottom: 22px; display: none; animation: fadeIn 0.3s ease; }
+  .active-timer { background: linear-gradient(135deg,#1a0035,#3DBFB0 200%); border: 2px solid rgba(61,191,176,0.5); border-radius: 16px; padding: 24px; margin-bottom: 22px; display: none; animation: fadeIn 0.3s ease; position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(61,191,176,0.2); }
   .active-timer.visible { display: block; }
+  .active-timer::before { content:''; position:absolute; top:0; left:-100%; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(61,191,176,0.12),transparent); animation:timer-shine 3s infinite; pointer-events:none; }
+  @keyframes timer-shine { 0%{left:-100%} 100%{left:200%} }
   .timer-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
   .timer-task-name { font-size: 18px; font-weight: 700; color: var(--accent); }
   .timer-meta { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -262,6 +264,14 @@
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
       <div style="display:flex;align-items:center;gap:8px">
+        <div onclick="toggleTheme()" title="Cambiar modo claro/oscuro" style="display:flex;align-items:center;gap:8px;cursor:pointer;background:#f6bf4a;border-radius:24px;padding:5px 12px 5px 8px;">
+          <span style="font-size:13px;">🌙</span>
+          <div style="position:relative;width:40px;height:22px;">
+            <div id="theme-track" style="position:absolute;inset:0;border-radius:22px;background:rgba(0,0,0,0.15);border:2px solid rgba(0,0,0,0.1);transition:background 0.25s;"></div>
+            <div id="theme-knob" style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:transform 0.25s;"></div>
+          </div>
+          <span style="font-size:13px;">☀️</span>
+        </div>
         <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}" id="btn-sheet-link" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#750a8b;color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;text-decoration:none;letter-spacing:0.5px;transition:background 0.15s;" onmouseover="this.style.background='#5a0870'" onmouseout="this.style.background='#750a8b'">
           📊 Ver Excel
         </a>
@@ -273,6 +283,7 @@
       <div class="date-display">
         <div id="clock" style="font-size:12px;color:var(--accent);font-family:'DM Mono',monospace"></div>
         <span id="today-date"></span>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:1px;">v2.4.0</span>
       </div>
     </div>
   </header>
@@ -283,6 +294,7 @@
     <button class="tab" onclick="switchTab('tipos')">🎨 Tipos</button>
     <button class="tab" onclick="switchTab('sla')">📋 SLA Ref.</button>
     <button class="tab" onclick="switchTab('ayuda')">❓ Ayuda</button>
+    <button class="tab nov-tab" onclick="switchTab('novedades')">📢 Novedades</button>
   </div>
 
   <!-- TAB TRACKER -->
@@ -440,6 +452,14 @@
     </div>
   </div>
 
+  
+  <!-- TAB NOVEDADES -->
+  <div class="tab-panel" id="tab-novedades">
+    <div class="settings-card" style="border:none;background:transparent;padding:0;">
+      <div id="nov-inline-content"></div>
+    </div>
+  </div>
+
   <!-- TAB AYUDA -->
   <div class="tab-panel" id="tab-ayuda">
     <div class="settings-card">
@@ -576,12 +596,6 @@
 </div>
 
 
-<!-- VERSION + THEME TOGGLE -->
-<div style="position:fixed;bottom:12px;right:16px;display:flex;align-items:center;gap:8px;z-index:999;">
-  <button id="theme-toggle" onclick="toggleTheme()" title="Cambiar modo" style="background:rgba(117,10,139,0.15);border:1px solid rgba(117,10,139,0.3);color:#750a8b;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">🌙</button>
-  <span style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(117,10,139,0.5);letter-spacing:1px;">v2.4.0</span>
-</div>
-
 <div class="nov-overlay" id="nov-overlay" style="display:none;">
   <div class="nov-modal">
     <div class="nov-header">
@@ -614,30 +628,28 @@ function toggleTheme() {
   const newTheme = isDark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', newTheme);
   localStorage.setItem('sla_theme', newTheme);
-  document.getElementById('theme-toggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
-  // Update version badge color in dark mode
-  const badge = document.getElementById('theme-toggle');
-  if (newTheme === 'dark') {
-    badge.style.background = 'rgba(192,99,168,0.2)';
-    badge.style.borderColor = 'rgba(192,99,168,0.4)';
-    badge.style.color = '#C063A8';
+  updateThemeSwitch(newTheme);
+}
+
+function updateThemeSwitch(theme) {
+  const knob = document.getElementById('theme-knob');
+  const track = document.getElementById('theme-track');
+  if (!knob) return;
+  if (theme === 'dark') {
+    knob.style.transform = 'translateX(20px)';
+    track.style.background = 'rgba(0,0,0,0.25)';
+    track.style.borderColor = 'rgba(0,0,0,0.1)';
   } else {
-    badge.style.background = 'rgba(117,10,139,0.15)';
-    badge.style.borderColor = 'rgba(117,10,139,0.3)';
-    badge.style.color = '#750a8b';
+    knob.style.transform = 'translateX(0)';
+    track.style.background = 'rgba(255,255,255,0.2)';
+    track.style.borderColor = 'rgba(255,255,255,0.4)';
   }
 }
 
 function initTheme() {
   const saved = localStorage.getItem('sla_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
-  if (saved === 'dark') {
-    const btn = document.getElementById('theme-toggle');
-    btn.style.background = 'rgba(192,99,168,0.2)';
-    btn.style.borderColor = 'rgba(192,99,168,0.4)';
-    btn.style.color = '#C063A8';
-  }
+  updateThemeSwitch(saved);
 }
 
 // ── LUNCH WARNING ─────────────────────────────────────────────────
@@ -707,7 +719,30 @@ const NOVEDADES_CONFIG = {
   ]
 };
 
+function renderNovInline() {
+  const el = document.getElementById('nov-inline-content');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="background:linear-gradient(135deg,#9B27AF,#3DBFB0);border-radius:16px;padding:24px 28px;margin-bottom:20px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.7);text-transform:uppercase;margin-bottom:6px;">📢 Making Bulla · SLA Tracker</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#fff;">${NOVEDADES_CONFIG.title}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.6);margin-top:4px;">${NOVEDADES_CONFIG.date}</div>
+      <div style="display:flex;gap:6px;margin-top:14px;">${['#E35376','#3DBFB0','#F5C842','#9B27AF','#F57C20'].map(col=>`<span style="flex:1;height:6px;border-radius:10px;background:${col}"></span>`).join('')}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${NOVEDADES_CONFIG.items.map(item => `
+        <div style="display:flex;gap:14px;background:var(--settings-bg);border:1px solid var(--settings-border);border-radius:12px;padding:14px 16px;border-left:4px solid ${item.color};">
+          <div style="width:10px;height:10px;border-radius:50%;background:${item.color};margin-top:4px;flex-shrink:0;"></div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--settings-text);margin-bottom:4px;">${item.title}</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7;">${item.desc}</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
 function initNovedades() {
+  renderNovInline();
   const seen = localStorage.getItem('nov_seen_' + NOVEDADES_CONFIG.id);
   if (seen) return; // already seen this version
   document.getElementById('nov-title').textContent = NOVEDADES_CONFIG.title;
@@ -1194,7 +1229,7 @@ function getSLABadge(seconds, type, qty) {
 
 // ── TABS ──────────────────────────────────────────────────────────
 function switchTab(name) {
-  const names = ['tracker','clientes','tipos','sla','ayuda'];
+  const names = ['tracker','clientes','tipos','sla','ayuda','novedades'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
