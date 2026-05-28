@@ -1485,7 +1485,8 @@ function stopTask(id, completed) {
     syncTaskToSheet(task);
   }
   activeTasks.splice(idx, 1);
-  saveActiveTasks();
+  if (activeTasks.length === 0) localStorage.removeItem('sla_active');
+  else saveActiveTasks();
   renderActiveTimers();
 }
 
@@ -1505,25 +1506,37 @@ function togglePause(id) {
 }
 
 function saveActiveTasks() {
-  try { sessionStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
-    ...at, startedAt: at.paused ? null : at.startedAt, now: Date.now()
-  })))); } catch(e) {}
+  try {
+    localStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
+      ...at,
+      // Save the real wall-clock timestamp of when we last saved
+      savedAt: Date.now()
+    }))));
+  } catch(e) {}
 }
 
 function loadActiveTasks() {
   try {
-    const s = sessionStorage.getItem('sla_active');
+    const s = localStorage.getItem('sla_active');
     if (!s) return;
     const saved = JSON.parse(s);
+    const now = Date.now();
+
     activeTasks = saved.map(at => {
-      // If was running, adjust startedAt to account for time since save
       if (!at.paused && at.startedAt) {
-        const elapsed = Math.floor((Date.now() - at.now) / 1000);
-        at.seconds = at.pausedSeconds + Math.floor((Date.now() - at.startedAt) / 1000);
+        // Calculate real elapsed time using wall clock
+        // This works even if power went out for hours
+        at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
       }
       return at;
     });
-    renderActiveTimers();
+
+    if (activeTasks.length > 0) {
+      renderActiveTimers();
+      // Show a recovery toast
+      const names = activeTasks.map(at => at.task.name).join(', ');
+      showToast(`⚡ Tarea recuperada: ${names}`);
+    }
   } catch(e) {}
 }
 
