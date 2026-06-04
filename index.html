@@ -417,15 +417,27 @@
   
           </div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <label style="font-size:10px;font-family:'DM Mono',monospace;color:#750a8b;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">¿Es ajuste?</label>
-          <div style="display:flex;align-items:center;gap:8px">
-            <label class="ajuste-toggle">
-              <input type="checkbox" id="is-ajuste" onchange="onAjusteChange()">
-              <span class="toggle-track"><span class="toggle-thumb"></span></span>
-              <span class="ajuste-label">Es un ajuste</span>
-            </label>
-            <span class="badge-ajuste" id="ajuste-badge" style="display:none">AJUSTE</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <label style="font-size:10px;font-family:'DM Mono',monospace;color:#750a8b;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">¿Es ajuste?</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label class="ajuste-toggle">
+                <input type="checkbox" id="is-ajuste" onchange="onAjusteChange()">
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="ajuste-label">Es un ajuste</span>
+              </label>
+              <span class="badge-ajuste" id="ajuste-badge" style="display:none">AJUSTE</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <label style="font-size:10px;font-family:'DM Mono',monospace;color:#3DBFB0;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">¿Ajuste Emplifi?</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label class="ajuste-toggle" id="emplifi-toggle-wrap">
+                <input type="checkbox" id="is-emplifi">
+                <span class="toggle-track" style="--toggle-on:#3DBFB0"><span class="toggle-thumb"></span></span>
+                <span class="ajuste-label" style="color:#3DBFB0" id="emplifi-label">No</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -446,6 +458,17 @@
         <div class="section-label">REGISTRO DEL DÍA</div>
         <div class="task-count" id="task-count">0 tareas registradas</div>
       </div>
+      <!-- OBJETIVO DIARIO -->
+      <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:4px;">🎯 Objetivo diario</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:6px;overflow:hidden;">
+            <div id="goal-bar" style="height:100%;background:#fff;border-radius:6px;transition:width 0.4s ease;width:0%"></div>
+          </div>
+          <span id="goal-text" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">0 / 10</span>
+        </div>
+        <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px;">10 artes pendientes</div>
+      </div>
     </div>
     <div class="tasks-list" id="tasks-list">
       <div class="empty-state"><div class="icon">⏱</div>Aún no hay tareas registradas hoy</div>
@@ -457,6 +480,7 @@
       <div class="summary-item"><div class="summary-label">🟡 Lento</div><div class="summary-value" id="yellow-count" style="color:var(--orange)">0</div></div>
       <div class="summary-item"><div class="summary-label">🔴 Excedido</div><div class="summary-value" id="red-count" style="color:var(--danger)">0</div></div>
       <div class="summary-item"><div class="summary-label">Ajustes</div><div class="summary-value" id="ajuste-count" style="color:var(--purple)">0</div></div>
+      <div class="summary-item"><div class="summary-label">Emplifi</div><div class="summary-value" id="emplifi-count" style="color:#3DBFB0">0</div></div>
     </div>
   </div>
 
@@ -733,34 +757,34 @@ checkLunch(); // check immediately on load
 // colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
 
 const NOVEDADES_CONFIG = {
-  id: 'nov-may-2026-v2',
-  title: '🎉 Actualizaciones del Tracker',
-  date: 'Mayo 2026 · v2.4.0',
+  id: 'nov-jun-2026-v1',
+  title: '🎉 Novedades de Junio 2026',
+  date: 'Junio 2026 · v2.5.0',
   items: [
     {
-      color: '#9B27AF',
-      title: '🌙 Modo oscuro disponible',
-      desc: 'Activa el modo oscuro con el botón 🌙 en la esquina inferior derecha. Tu preferencia se guarda automáticamente.'
+      color: '#F57C20',
+      title: '🎯 Objetivo diario de 10 artes',
+      desc: 'Nuevo indicador en el registro del día. Muestra cuántas tareas llevas completadas vs la meta de 10 artes diarios. Se pone verde al cumplirla.'
     },
     {
       color: '#3DBFB0',
-      title: 'Nuevo diseñador: Jonathan Jovane',
-      desc: 'Bienvenido Jonathan al equipo. Ya está disponible en el selector de diseñadores.'
+      title: '🔄 Switch de Ajuste Emplifi',
+      desc: 'Nuevo toggle en el formulario para marcar cuando es un ajuste de Emplifi. Se registra en el Sheet en su propia columna.'
+    },
+    {
+      color: '#9B27AF',
+      title: '📅 Reunión / Meet como tipo de tarea',
+      desc: 'Ya puedes registrar reuniones y meets. SLA máximo de 60 minutos. Así queda documentado el tiempo de reuniones en el historial.'
     },
     {
       color: '#E35376',
-      title: 'Pestaña de Ayuda disponible',
-      desc: 'Agregamos ❓ Ayuda con soluciones a los problemas más comunes. Consúltala antes de escribirle al admin.'
+      title: '🤖 Animación IA como tipo de tarea',
+      desc: 'Nuevo tipo con SLA de hasta 150 minutos para animaciones generadas con inteligencia artificial.'
     },
     {
       color: '#F5C842',
-      title: 'Recuerda pausar en el almuerzo',
-      desc: 'Aparece un aviso automático a las 12PM. Presiona ⏸ PAUSAR antes de salir a almorzar.'
-    },
-    {
-      color: '#F57C20',
-      title: 'SLA multiplica por cantidad de piezas',
-      desc: 'Historias, estáticos, stickers y portadas de reel calculan el SLA multiplicado por cantidad. Ajusta bien el número antes de iniciar.'
+      title: '⚡ Recuperación tras apagón',
+      desc: 'Si se va la luz con una tarea activa, al volver el tracker la recupera automáticamente con el tiempo real transcurrido.'
     },
   ]
 };
@@ -846,6 +870,9 @@ const SLA_TIMES = {
   'Valla Digital': [40, 90],
   'Animación - Bumper': [360, 420],
   'Animación - Quemado': [120, 180],
+  'Animación IA': [90, 150],
+  // Reuniones
+  'Reunión': [30, 60], 'Meet': [30, 60],
 };
 
 // Tipos donde el SLA se multiplica por cantidad (cada pieza tiene su propio tiempo)
@@ -860,7 +887,8 @@ const DEF_TYPES   = [
   'Web','Bumper para TV','Cuña Radial','Material Impreso','Keyvisual',
   'Video TikTok','Multiformatos',
   'Animación - Marquesina de Logo','Animación - Contenido Social Media',
-  'Animación - Bumper','Animación - Quemado'
+  'Animación - Bumper','Animación - Quemado','Animación IA',
+  'Reunión','Meet'
 ];
 
 // ── STATE ────────────────────────────────────────────────────────
@@ -1070,7 +1098,7 @@ async function ensureMonthSheet() {
     {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']] })
+      body: JSON.stringify({ values: [['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']] })
     }
   );
 
@@ -1118,7 +1146,7 @@ async function ensureSheetHeaders() {
     const rows = data.values || [];
     const headersExist = rows.some(r => r && r.includes('Diseñador'));
     if (!headersExist) {
-      await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
+      await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
     }
     // NOTE: Day separator is inserted on first task completion, not on app open
   } catch(e) { console.warn('Headers check failed', e); }
@@ -1146,7 +1174,7 @@ async function ensureDaySeparator() {
     await sheetsAppend([
       ['','','','','','','','','','','','','',''],
       [todayLabel,'','','','','','','','','','','','',''],
-      ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']
+      ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']
     ]);
 
     // Apply rosa #E35376 color to the separator row
@@ -1220,11 +1248,12 @@ async function syncTaskToSheet(task) {
       task.type,
       task.qty || 1,
       task.isAjuste ? 'Sí' : 'No',
+      task.isEmplifi ? 'Sí' : 'No',
       new Date(task.startTime).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
       new Date(task.endTime).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
       durMin,
       slaRef || '—',
-      pct ? pct + '%' : '—',
+      pct !== null ? pct : '—',
       semaforo
     ]]);
     setSyncStatus('synced', '✓ Guardado en Sheets');
@@ -1400,6 +1429,10 @@ function renderClientPills() {
 function onAjusteChange() {
   document.getElementById('ajuste-badge').style.display = document.getElementById('is-ajuste').checked?'inline-block':'none';
 }
+document.getElementById('is-emplifi').addEventListener('change', function() {
+  document.getElementById('emplifi-label').textContent = this.checked ? 'Emplifi ✓' : 'No';
+  document.getElementById('emplifi-label').style.color = this.checked ? '#3DBFB0' : '#3DBFB0';
+});
 
 // ── TIMER (multi, max 2) ──────────────────────────────────────────
 let activeTasks = []; // array of {id, task, seconds, paused}
@@ -1448,12 +1481,15 @@ function renderActiveTimers() {
 function startTask() {
   const name = document.getElementById('task-name').value.trim();
   const isAjuste = document.getElementById('is-ajuste').checked;
-  if (!selDesigner) { showToast('Selecciona tu nombre primero', 'warning'); return; }
-  if (!name)        { hi('task-name'); return; }
+  const isEmplifi = document.getElementById('is-emplifi').checked;
+  if (!selDesigner)          { showToast('Selecciona tu nombre primero', 'warning'); return; }
+  if (!name)                 { hi('task-name'); return; }
+  if (!selClient)            { showToast('Selecciona un cliente antes de iniciar', 'warning'); return; }
+  if (!selTypes.length)      { showToast('Selecciona al menos un tipo de tarea', 'warning'); return; }
   if (activeTasks.length >= 2) { showToast('Máximo 2 tareas activas a la vez', 'warning'); return; }
 
   const id = Date.now();
-  const task = { name, designer:selDesigner, client:selClient||'—', type:selTypes.length?selTypes.join(', '):'—', qty:selQty, category:selCategory||'—', isAjuste, startTime:new Date().toISOString() };
+  const task = { name, designer:selDesigner, client:selClient||'—', type:selTypes.length?selTypes.join(', '):'—', qty:selQty, category:selCategory||'—', isAjuste, isEmplifi, startTime:new Date().toISOString() };
   activeTasks.push({ id, task, seconds:0, paused:false, startedAt:Date.now(), pausedSeconds:0 });
   saveActiveTasks();
   renderActiveTimers();
@@ -1461,6 +1497,8 @@ function startTask() {
   document.getElementById('task-name').value='';
   document.getElementById('is-ajuste').checked=false;
   document.getElementById('ajuste-badge').style.display='none';
+  document.getElementById('is-emplifi').checked=false;
+  document.getElementById('emplifi-label').textContent='No';
   setQty(1);
   selCategory=''; selTypes=[]; selClient='';
   document.querySelectorAll('.cat-pill,.type-pill').forEach(p=>p.classList.remove('active'));
@@ -1585,6 +1623,23 @@ function renderTasks() {
   document.getElementById('yellow-count').textContent=yellows;
   document.getElementById('red-count').textContent=reds;
   document.getElementById('ajuste-count').textContent=tasks.filter(t=>t.isAjuste).length;
+  document.getElementById('emplifi-count').textContent=tasks.filter(t=>t.isEmplifi).length;
+
+  // Daily goal update
+  const DAILY_GOAL = 10;
+  const completedToday = tasks.filter(t=>t.status==='Completada').length;
+  const pctGoal = Math.min(Math.round((completedToday/DAILY_GOAL)*100), 100);
+  const remaining = Math.max(DAILY_GOAL - completedToday, 0);
+  document.getElementById('goal-bar').style.width = pctGoal + '%';
+  document.getElementById('goal-text').textContent = `${completedToday} / ${DAILY_GOAL}`;
+  const goalSub = document.getElementById('goal-sub');
+  if (completedToday >= DAILY_GOAL) {
+    goalSub.textContent = '🎉 ¡Meta del día cumplida!';
+    document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#2da898,#3DBFB0)';
+  } else {
+    goalSub.textContent = `${remaining} arte${remaining!==1?'s':''} pendiente${remaining!==1?'s':''}`;
+    document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#F57C20,#F5C842)';
+  }
 }
 
 function ts(iso){return new Date(iso).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});}
