@@ -351,6 +351,7 @@
         <span class="designer-pill">Joel Tapia</span>
         <span class="designer-pill">Jonathan Jovane</span>
         <span class="designer-pill">Ana Arriaga</span>
+        <span class="designer-pill">Irma Vanessa</span>
       </div>
     </div>
 
@@ -1322,6 +1323,7 @@ function toggleHelp(id) {
 function updateDate() {
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
+let _saveCounter = 0;
 function tick() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
   const now = Date.now();
@@ -1352,8 +1354,11 @@ function tick() {
       }
     }
   });
+  // Auto-save every 10 seconds to survive power outages
+  _saveCounter = (_saveCounter || 0) + 1;
+  if (_saveCounter % 10 === 0 && activeTasks.length > 0) saveActiveTasks();
 }
-function fmt(s) { return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); }
+let _saveCounter = 0; { return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); }
 function fmtShort(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}m`:`${m}m ${s%60}s`; }
 
 // ── DESIGNER ─────────────────────────────────────────────────────
@@ -1472,7 +1477,13 @@ function renderActiveTimers() {
       const id = parseInt(btn.getAttribute('data-id'));
       const action = btn.getAttribute('data-action');
       if (action === 'complete') stopTask(id, true);
-      else if (action === 'cancel') stopTask(id, false);
+      else if (action === 'cancel') {
+        const at = activeTasks.find(t => t.id === id);
+        const nombre = at ? at.task.name : 'esta tarea';
+        if (confirm(`¿Seguro que quieres cancelar "${nombre}"?\n\nNo se guardará en el registro.`)) {
+          stopTask(id, false);
+        }
+      }
       else if (action === 'pause') togglePause(id);
     });
   });
@@ -1545,10 +1556,15 @@ function togglePause(id) {
 
 function saveActiveTasks() {
   try {
+    if (activeTasks.length === 0) {
+      localStorage.removeItem('sla_active');
+      return;
+    }
     localStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
       ...at,
-      // Save the real wall-clock timestamp of when we last saved
-      savedAt: Date.now()
+      // Store current seconds so we have a checkpoint even if startedAt math fails
+      checkpointSeconds: at.seconds,
+      checkpointAt: Date.now()
     }))));
   } catch(e) {}
 }
@@ -1561,21 +1577,26 @@ function loadActiveTasks() {
     const now = Date.now();
 
     activeTasks = saved.map(at => {
-      if (!at.paused && at.startedAt) {
-        // Calculate real elapsed time using wall clock
-        // This works even if power went out for hours
-        at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+      if (!at.paused) {
+        if (at.startedAt) {
+          // Best case: calculate from startedAt (most accurate)
+          at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+        } else if (at.checkpointSeconds !== undefined && at.checkpointAt) {
+          // Fallback: use checkpoint + elapsed since checkpoint
+          at.seconds = at.checkpointSeconds + Math.floor((now - at.checkpointAt) / 1000);
+          // Restore startedAt from checkpoint
+          at.startedAt = at.checkpointAt - ((at.checkpointSeconds - at.pausedSeconds) * 1000);
+        }
       }
       return at;
     });
 
     if (activeTasks.length > 0) {
       renderActiveTimers();
-      // Show a recovery toast
       const names = activeTasks.map(at => at.task.name).join(', ');
       showToast(`⚡ Tarea recuperada: ${names}`);
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadActiveTasks error', e); }
 }
 
 function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); lsSaveTasks(); renderTasks(); }
