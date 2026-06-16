@@ -351,6 +351,7 @@
         <span class="designer-pill">Joel Tapia</span>
         <span class="designer-pill">Jonathan Jovane</span>
         <span class="designer-pill">Ana Arriaga</span>
+        <span class="designer-pill">Irma Vanessa</span>
       </div>
     </div>
 
@@ -368,7 +369,7 @@
 
         <!-- Cliente -->
         <div class="drop-block" id="drop-client">
-          <button type="button" class="drop-header" data-target="drop-client">
+          <button type="button" class="drop-header" onclick="toggleDrop('drop-client')">
             <span class="drop-label">🏢 Cliente</span>
             <span class="drop-meta"><span class="drop-val" id="drop-client-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
           </button>
@@ -379,23 +380,23 @@
 
         <!-- Categoría -->
         <div class="drop-block" id="drop-category">
-          <button type="button" class="drop-header" data-target="drop-category">
+          <button type="button" class="drop-header" onclick="toggleDrop('drop-category')">
             <span class="drop-label">📂 Categoría</span>
             <span class="drop-meta"><span class="drop-val" id="drop-category-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
           </button>
           <div class="drop-body drop-body-float">
             <div class="pill-selector">
-              <span class="cat-pill" data-val="Grilla de Contenido">📅 Grilla de Contenido</span>
-              <span class="cat-pill" data-val="Redes Sociales">📱 Redes Sociales</span>
-              <span class="cat-pill" data-val="Proyecto">📁 Proyecto</span>
-              <span class="cat-pill" data-val="Diseño Gráfico General">🎨 Diseño Gráfico General</span>
+              <span class="cat-pill" data-val="Grilla de Contenido" onclick="selectCat('Grilla de Contenido',this)">📅 Grilla de Contenido</span>
+              <span class="cat-pill" data-val="Redes Sociales" onclick="selectCat('Redes Sociales',this)">📱 Redes Sociales</span>
+              <span class="cat-pill" data-val="Proyecto" onclick="selectCat('Proyecto',this)">📁 Proyecto</span>
+              <span class="cat-pill" data-val="Diseño Gráfico General" onclick="selectCat('Diseño Gráfico General',this)">🎨 Diseño Gráfico General</span>
             </div>
           </div>
         </div>
 
         <!-- Tipo -->
         <div class="drop-block" id="drop-type">
-          <button type="button" class="drop-header" data-target="drop-type">
+          <button type="button" class="drop-header" onclick="toggleDrop('drop-type')">
             <span class="drop-label">🎨 Tipo</span>
             <span class="drop-meta"><span class="drop-val" id="drop-type-val">Seleccionar</span><span class="drop-arrow">▸</span></span>
           </button>
@@ -971,45 +972,34 @@ document.querySelectorAll('.designer-pill').forEach(pill => {
 });
 
 // ── DROP BLOCKS (acordeón) ────────────────────────────────────────
-function initDropBlocks() {
-  // Toggle open/close — solo uno abierto a la vez
-  document.querySelectorAll('.drop-header').forEach(header => {
-    header.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const block = header.closest('.drop-block');
-      const isOpen = block.classList.contains('open');
-      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
-      if (!isOpen) block.classList.add('open');
-    });
-  });
+function toggleDrop(id) {
+  const block = document.getElementById(id);
+  const isOpen = block.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+  // Open this one if it was closed
+  if (!isOpen) block.classList.add('open');
+}
 
-  // Cerrar al tocar fuera del dropdown
-  document.addEventListener('click', (e) => {
+function selectCat(val, el) {
+  selCategory = selCategory === val ? '' : val;
+  document.querySelectorAll('.cat-pill').forEach(p =>
+    p.classList.toggle('active', p.getAttribute('data-val') === selCategory)
+  );
+  document.getElementById('drop-category-val').textContent = selCategory || 'Seleccionar';
+  document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+}
+
+window._closeAllDrops = function() {
+  document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
+};
+
+function initDropBlocks() {
+  // Close when clicking outside
+  document.addEventListener('click', function(e) {
     if (!e.target.closest('.drop-block')) {
       document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
     }
-  });
-
-  // Cliente pills
-  document.querySelectorAll('#client-pills .pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const v = pill.getAttribute('data-value');
-      selClient = selClient === v ? '' : v;
-      renderClientPills();
-      document.getElementById('drop-client-val').textContent = selClient || 'Seleccionar...';
-      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
-    });
-  });
-
-  // Categoría pills
-  document.querySelectorAll('.cat-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const v = pill.getAttribute('data-val');
-      selCategory = selCategory === v ? '' : v;
-      document.querySelectorAll('.cat-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-val') === selCategory));
-      document.getElementById('drop-category-val').textContent = selCategory || 'Seleccionar...';
-      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
-    });
   });
 }
 
@@ -1322,6 +1312,7 @@ function toggleHelp(id) {
 function updateDate() {
   document.getElementById('today-date').textContent = new Date().toLocaleDateString('es-ES',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
+let _saveCounter = 0;
 function tick() {
   document.getElementById('clock').textContent = new Date().toLocaleTimeString('es-ES');
   const now = Date.now();
@@ -1352,6 +1343,9 @@ function tick() {
       }
     }
   });
+  // Auto-save every 10 seconds to survive power outages
+  _saveCounter = (_saveCounter || 0) + 1;
+  if (_saveCounter % 10 === 0 && activeTasks.length > 0) saveActiveTasks();
 }
 function fmt(s) { return [Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); }
 function fmtShort(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h>0?`${h}h ${m}m`:`${m}m ${s%60}s`; }
@@ -1379,9 +1373,9 @@ function renderTypePillsDrop() {
     return `<span class="type-pill${selTypes.includes(t)?' active':''}${isAnim?' anim-pill':''}" data-val="${esc(t)}">${esc(t)}</span>`;
   }).join('');
   container.querySelectorAll('.type-pill').forEach(pill => {
-    pill.onclick = (e) => {
+    pill.onclick = function(e) {
       e.stopPropagation();
-      const v = pill.getAttribute('data-val');
+      const v = this.getAttribute('data-val');
       if (selTypes.includes(v)) {
         selTypes = selTypes.filter(t => t !== v);
       } else if (selTypes.length < 5) {
@@ -1414,14 +1408,15 @@ function renderClientPills() {
     `<span class="pill ${selClient===c?'sel-client':''}" data-value="${esc(c)}">${esc(c)}</span>`
   ).join('');
   container.querySelectorAll('.pill').forEach(el => {
-    el.addEventListener('click', () => {
-      const v = el.getAttribute('data-value');
+    el.onclick = function(e) {
+      e.stopPropagation();
+      const v = this.getAttribute('data-value');
       selClient = selClient === v ? '' : v;
       renderClientPills();
       document.getElementById('drop-client-val').textContent = selClient || 'Seleccionar...';
       document.getElementById('sel-client-display').textContent = selClient || '— Cliente';
-      document.querySelectorAll('.drop-block').forEach(b => b.classList.remove('open'));
-    });
+      if(window._closeAllDrops) window._closeAllDrops();
+    };
   });
   document.getElementById('sel-client-display').textContent = selClient || '— Cliente';
 }
@@ -1472,7 +1467,13 @@ function renderActiveTimers() {
       const id = parseInt(btn.getAttribute('data-id'));
       const action = btn.getAttribute('data-action');
       if (action === 'complete') stopTask(id, true);
-      else if (action === 'cancel') stopTask(id, false);
+      else if (action === 'cancel') {
+        const at = activeTasks.find(t => t.id === id);
+        const nombre = at ? at.task.name : 'esta tarea';
+        if (confirm(`¿Seguro que quieres cancelar "${nombre}"?\n\nNo se guardará en el registro.`)) {
+          stopTask(id, false);
+        }
+      }
       else if (action === 'pause') togglePause(id);
     });
   });
@@ -1545,10 +1546,15 @@ function togglePause(id) {
 
 function saveActiveTasks() {
   try {
+    if (activeTasks.length === 0) {
+      localStorage.removeItem('sla_active');
+      return;
+    }
     localStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
       ...at,
-      // Save the real wall-clock timestamp of when we last saved
-      savedAt: Date.now()
+      // Store current seconds so we have a checkpoint even if startedAt math fails
+      checkpointSeconds: at.seconds,
+      checkpointAt: Date.now()
     }))));
   } catch(e) {}
 }
@@ -1561,21 +1567,26 @@ function loadActiveTasks() {
     const now = Date.now();
 
     activeTasks = saved.map(at => {
-      if (!at.paused && at.startedAt) {
-        // Calculate real elapsed time using wall clock
-        // This works even if power went out for hours
-        at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+      if (!at.paused) {
+        if (at.startedAt) {
+          // Best case: calculate from startedAt (most accurate)
+          at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
+        } else if (at.checkpointSeconds !== undefined && at.checkpointAt) {
+          // Fallback: use checkpoint + elapsed since checkpoint
+          at.seconds = at.checkpointSeconds + Math.floor((now - at.checkpointAt) / 1000);
+          // Restore startedAt from checkpoint
+          at.startedAt = at.checkpointAt - ((at.checkpointSeconds - at.pausedSeconds) * 1000);
+        }
       }
       return at;
     });
 
     if (activeTasks.length > 0) {
       renderActiveTimers();
-      // Show a recovery toast
       const names = activeTasks.map(at => at.task.name).join(', ');
       showToast(`⚡ Tarea recuperada: ${names}`);
     }
-  } catch(e) {}
+  } catch(e) { console.warn('loadActiveTasks error', e); }
 }
 
 function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); lsSaveTasks(); renderTasks(); }
