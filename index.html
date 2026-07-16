@@ -147,7 +147,8 @@
   .manual-field input { width:100%;background:var(--input-bg);color:var(--input-text);border:2px solid var(--form-border);border-radius:8px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:14px;outline:none; }
   .manual-field input:focus { border-color:#E35376; }
   .manual-preview { background:rgba(61,191,176,0.12);border:1px solid rgba(61,191,176,0.4);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-family:'DM Mono',monospace;font-size:12px;color:#2da898;font-weight:700;text-align:center; }
-  .manual-note { font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.6;background:rgba(117,10,139,0.06);padding:10px 12px;border-radius:8px; }
+  .manual-note { font-family:'DM Mono',monospace;font-size:10px;color:#750a8b;line-height:1.6;background:rgba(117,10,139,0.06);padding:10px 12px;border-radius:8px; }
+  [data-theme="dark"] .manual-note { color:var(--muted); }
   .manual-footer { padding:0 24px 22px;display:flex;gap:10px; }
   .manual-btn-cancel { flex:1;background:transparent;border:2px solid var(--form-border);color:var(--label-color);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;padding:11px;border-radius:10px;cursor:pointer;transition:all 0.15s; }
   .manual-btn-cancel:hover { background:rgba(117,10,139,0.08); }
@@ -163,7 +164,8 @@
   .nodesign-card { background: var(--form-bg); border: 2px dashed rgba(117,10,139,0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 22px; }
   .nodesign-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .nodesign-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--label-color); }
-  .nodesign-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
+  .nodesign-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: #9b6aaa; }
+  [data-theme="dark"] .nodesign-sub { color: var(--muted); }
   .nodesign-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media(max-width:600px){ .nodesign-buttons { grid-template-columns: 1fr; } }
   .nodesign-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 16px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Syne', sans-serif; }
@@ -224,7 +226,7 @@
   /* Summary */
   .summary { background: var(--summary-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 22px; display: flex; gap: 28px; flex-wrap: wrap; }
   .summary-item { display: flex; flex-direction: column; gap: 4px; }
-  .summary-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+  .summary-label { font-size: 10px; font-family: 'DM Mono', monospace; color: #9b6aaa; letter-spacing: 1.5px; text-transform: uppercase; }
   .summary-value { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; color: var(--accent); }
 
   .empty-state { text-align: center; padding: 48px 20px; color: #750a8b; font-size: 14px; font-family: 'DM Mono', monospace; }
@@ -420,6 +422,7 @@
     <button class="tab" onclick="switchTab('clientes')">🏢 Clientes</button>
     <button class="tab" onclick="switchTab('tipos')">🎨 Tipos</button>
     <button class="tab" onclick="switchTab('sla')">📋 SLA Ref.</button>
+    <button class="tab" onclick="switchTab('manual')">📖 Manual</button>
     <button class="tab" onclick="switchTab('ayuda')">❓ Ayuda</button>
     <button class="tab nov-tab" onclick="switchTab('novedades')">📢 Novedades</button>
   </div>
@@ -687,6 +690,184 @@
       <div class="settings-list">
         <!-- populated by JS -->
         <div id="sla-ref-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB MANUAL -->
+  <div class="tab-panel" id="tab-manual">
+    <div class="settings-card">
+      <h3>📖 Manual del SLA Tracker</h3>
+      <p>Guía completa de cada función de la app, explicada paso a paso.</p>
+
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:20px;">
+
+        <!-- M1 -->
+        <div style="border:2px solid #750a8b;border-radius:12px;overflow:hidden;">
+          <div style="background:#750a8b;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m1')">
+            <span style="font-size:16px;">🎯</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">1. Cómo registrar una tarea de diseño</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m1-arrow">▸</span>
+          </div>
+          <div id="m1" style="display:none;padding:14px 16px;background:#f8f4fc;">
+            <ol style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Selecciona tu <strong>nombre de diseñador</strong> arriba de todo (se guarda para la próxima vez).</li>
+              <li>Escribe el <strong>nombre de la tarea</strong> (ej: "Banner principal Q2").</li>
+              <li>Elige <strong>Cliente</strong>, <strong>Categoría</strong> y <strong>Tipo</strong> — los tres dropdowns se abren tocando el encabezado y permiten elegir varias opciones de Tipo si aplica.</li>
+              <li>Ajusta la <strong>cantidad de piezas</strong> con los botones − y + si son varias.</li>
+              <li>Marca <strong>"¿Es ajuste?"</strong> si la tarea es una corrección, o <strong>"¿Ajuste Emplifi?"</strong> si es específicamente un ajuste de Emplifi.</li>
+              <li>Toca <strong>▶ INICIAR TIMER</strong> — el reloj empieza a correr en tiempo real.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- M2 -->
+        <div style="border:2px solid #3DBFB0;border-radius:12px;overflow:hidden;">
+          <div style="background:#3DBFB0;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m2')">
+            <span style="font-size:16px;">⏱</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">2. Controlar el timer activo</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m2-arrow">▸</span>
+          </div>
+          <div id="m2" style="display:none;padding:14px 16px;background:#f0fdfb;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Cada tarea activa aparece como una tarjeta con el nombre, cliente, tipo y un reloj corriendo. Puedes tener hasta <strong>3 tareas activas al mismo tiempo</strong> (combinando activas y en pausa).</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li><strong>⬛ COMPLETADA</strong> — termina la tarea y la guarda en el registro del día y en el Sheet.</li>
+              <li><strong>⏸ PAUSAR / ▶ CONTINUAR</strong> — detiene o reanuda el conteo de tiempo sin perder el progreso.</li>
+              <li><strong>✕ CANCELAR</strong> — abre una ventana de confirmación; si aceptas, la tarea se borra sin guardarse en ningún lado.</li>
+              <li>La tarea más reciente que inicias siempre aparece <strong>arriba</strong> de la lista.</li>
+              <li>Si el navegador se cierra o hay un apagón con una tarea corriendo, al volver a abrir la app se <strong>recupera automáticamente</strong> con el tiempo real transcurrido.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- M3 -->
+        <div style="border:2px solid #9B27AF;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#750a8b,#9B27AF);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m3')">
+            <span style="font-size:16px;">📝</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">3. Registro Manual (sin usar el timer)</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m3-arrow">▸</span>
+          </div>
+          <div id="m3" style="display:none;padding:14px 16px;background:#f8f4fc;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Botón junto a INICIAR TIMER, para cuando se te olvidó darle iniciar. Llena el formulario normal y toca <strong>"📝 Registro Manual"</strong> en vez de iniciar el timer. Tiene dos modos:</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li><strong>✓ Ya terminé</strong> — pones la hora aproximada de inicio y de fin, y se registra directo como completada.</li>
+              <li><strong>⏱ Aún en curso</strong> — solo pones la hora de inicio estimada. El timer arranca en vivo ya con ese tiempo contado, y sigues pausando/completando normal.</li>
+            </ul>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#9B27AF;margin-top:10px;">Estas tareas quedan marcadas con la etiqueta <strong>📝 Manual</strong> tanto en la app como en el Sheet.</p>
+          </div>
+        </div>
+
+        <!-- M4 -->
+        <div style="border:2px dashed rgba(117,10,139,0.5);border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#9B27AF,#3DBFB0);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m4')">
+            <span style="font-size:16px;">⏱️</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">4. Tareas "No Diseño" (Reunión y Revisión Emplifi)</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m4-arrow">▸</span>
+          </div>
+          <div id="m4" style="display:none;padding:14px 16px;background:#f8fdfc;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Panel separado del formulario principal, para trabajo que no es diseño puro pero sí resta tiempo de producción. No cuentan para el objetivo de 10 artes diarios.</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li><strong>📅 Reunión / Meet</strong> — un clic inicia el timer directo, sin llenar cliente/tipo. SLA fijo: 60 min.</li>
+              <li><strong>🔄 Revisión Emplifi</strong> — SLA de 30 min. Máximo <strong>2 usos por día</strong> por diseñador; al tercer intento el botón se bloquea solo.</li>
+              <li>Ambas se registran en el Sheet con categoría <strong>"No Diseño"</strong>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- M5 -->
+        <div style="border:2px solid #E35376;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#E35376,#c0392b);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m5')">
+            <span style="font-size:16px;">🔢</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">5. Rondas de ajuste (exclusivo Novey)</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m5-arrow">▸</span>
+          </div>
+          <div id="m5" style="display:none;padding:14px 16px;background:#fff5f7;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Novey incluye 3 rondas de ajuste por contrato. A partir de la 4ta, ese trabajo queda fuera de lo incluido.</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Aparece un panel de selección cuando el cliente es <strong>Novey</strong> y marcas <strong>"¿Es ajuste?"</strong> o <strong>"¿Ajuste Emplifi?"</strong> (cualquiera de los dos).</li>
+              <li>Eliges <strong>1ra, 2da, 3ra</strong> (incluidas) o <strong>4ta o más</strong> (fuera de contrato, se marca con ⚠️).</li>
+              <li>No te deja iniciar el timer sin elegir la ronda.</li>
+              <li>Queda registrado en el Sheet en la columna <strong>"N° Ajuste (Novey)"</strong> y como badge visible en la app.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- M6 -->
+        <div style="border:2px solid #F57C20;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#F57C20,#F5C842);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m6')">
+            <span style="font-size:16px;">🎯</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">6. Objetivo diario de artes</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m6-arrow">▸</span>
+          </div>
+          <div id="m6" style="display:none;padding:14px 16px;background:#fff8f0;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes diarios</strong> (entre ajustes y artes nuevos). La barra se llena con cada tarea completada y se pone verde con un mensaje de felicitación al llegar a 10.</p>
+          </div>
+        </div>
+
+        <!-- M7 -->
+        <div style="border:2px solid #750a8b;border-radius:12px;overflow:hidden;">
+          <div style="background:#750a8b;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m7')">
+            <span style="font-size:16px;">🏢</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">7. Pestañas Clientes y Tipos</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m7-arrow">▸</span>
+          </div>
+          <div id="m7" style="display:none;padding:14px 16px;background:#f8f4fc;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Ahí puedes <strong>agregar o eliminar</strong> clientes y tipos de tarea. Los cambios se guardan en la pestaña "Config" del Google Sheet y se sincronizan para <strong>todo el equipo</strong> — no es solo local.</p>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Los tipos que empiezan con "Animación" se muestran resaltados en rosa. "Reunión / Meet" y "Revisión Emplifi" no aparecen aquí — se manejan desde el panel de "No Diseño".</p>
+          </div>
+        </div>
+
+        <!-- M8 -->
+        <div style="border:2px solid #3DBFB0;border-radius:12px;overflow:hidden;">
+          <div style="background:#3DBFB0;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m8')">
+            <span style="font-size:16px;">📋</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">8. SLA Ref. — tiempos de referencia</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m8-arrow">▸</span>
+          </div>
+          <div id="m8" style="display:none;padding:14px 16px;background:#f0fdfb;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Lista de cuánto tiempo debería tomar cada tipo de tarea. Con eso se calcula el semáforo:</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>🟢 <strong>OK</strong> — dentro del tiempo de referencia.</li>
+              <li>🟡 <strong>Lento</strong> — hasta 150% del tiempo.</li>
+              <li>🔴 <strong>Excedido</strong> — más del 150%.</li>
+            </ul>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-top:8px;">Para <strong>Historia, Estático, Sticker, Portada de Reel y Ajuste</strong>, el SLA se multiplica por la cantidad de piezas (ej: 5 historias × 30 min = 150 min de referencia).</p>
+          </div>
+        </div>
+
+        <!-- M9 -->
+        <div style="border:2px solid #F5C842;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#F5C842,#F57C20);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m9')">
+            <span style="font-size:16px;">🌙</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">9. Modo claro / oscuro</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m9-arrow">▸</span>
+          </div>
+          <div id="m9" style="display:none;padding:14px 16px;background:#fffdf0;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">El switch 🌙/☀️ en el encabezado cambia entre modo claro y oscuro. Tu preferencia se guarda automáticamente y se mantiene la próxima vez que abras la app en ese navegador.</p>
+          </div>
+        </div>
+
+        <!-- M10 -->
+        <div style="border:2px solid #750a8b;border-radius:12px;overflow:hidden;">
+          <div style="background:#750a8b;padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m10')">
+            <span style="font-size:16px;">📊</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">10. Ver Excel y sincronización</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m10-arrow">▸</span>
+          </div>
+          <div id="m10" style="display:none;padding:14px 16px;background:#f8f4fc;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">El botón <strong>"📊 Ver Excel"</strong> en el encabezado abre directamente el Google Sheet donde se guarda todo — sin necesidad de que te compartan el link por separado.</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li>Cada mes tiene su propia pestaña, creada automáticamente (ej: "Julio 2026").</li>
+              <li>Al completar la primera tarea del día se inserta un separador con la fecha en rosa.</li>
+              <li>El indicador <strong>"✓ Conectado a Google Sheets"</strong> en el encabezado confirma que la sincronización funciona.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:24px;padding:14px 16px;background:#f0e8f7;border-radius:10px;font-family:'DM Mono',monospace;font-size:11px;color:#750a8b;line-height:1.8;">
+        💡 <strong>¿Tienes dudas sobre un error específico?</strong> Revisa la pestaña <strong>❓ Ayuda</strong> — ahí están las soluciones a los problemas más comunes.
       </div>
     </div>
   </div>
@@ -985,10 +1166,15 @@ checkLunch(); // check immediately on load
 // colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
 
 const NOVEDADES_CONFIG = {
-  id: 'nov-jul-2026-v2',
+  id: 'nov-jul-2026-v3',
   title: '🎉 Novedades de Julio',
-  date: 'Julio 2026 · v2.8.0',
+  date: 'Julio 2026 · v2.9.0',
   items: [
+    {
+      icon: '📖', color: '#750a8b',
+      title: 'Nueva pestaña: Manual',
+      desc: 'Guía completa paso a paso de cada función del SLA Tracker — cómo registrar tareas, controlar el timer, Registro Manual, tareas No Diseño, rondas de ajuste Novey, y más. Búscala en la barra junto a "SLA Ref."'
+    },
     {
       icon: '📅', color: '#9B27AF',
       title: 'Reunión / Meet — botón aparte',
@@ -1564,7 +1750,7 @@ function getSLABadge(seconds, type, qty) {
 
 // ── TABS ──────────────────────────────────────────────────────────
 function switchTab(name) {
-  const names = ['tracker','clientes','tipos','sla','ayuda','novedades'];
+  const names = ['tracker','clientes','tipos','sla','manual','ayuda','novedades'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', names[i]===name));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
