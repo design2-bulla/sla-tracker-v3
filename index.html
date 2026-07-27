@@ -1591,7 +1591,83 @@ async function ensureSheetHeaders() {
       await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
     }
     // NOTE: Day separator is inserted on first task completion, not on app open
+
+    // Auto-limpieza de separadores/encabezados duplicados (causados por
+    // varios diseñadores completando tareas casi al mismo tiempo)
+    await cleanupDuplicateSeparators();
   } catch(e) { console.warn('Headers check failed', e); }
+}
+
+async function cleanupDuplicateSeparators() {
+  try {
+    const token = await getAccessToken();
+    const sheetName = currentSheet();
+
+    // Leer columna A y B para identificar separadores y filas de encabezado
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:B2000`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    const rows = data.values || [];
+
+    const isSeparator = (row) => row && row[0] && /^──.+──$/.test(row[0].trim());
+    const isHeaderRow = (row) => row && row[0] === 'Fecha' && row[1] === 'Diseñador';
+    const isBlank = (row) => !row || (!row[0] && !row[1]);
+
+    const seenLabels = new Set();
+    const rowsToDelete = []; // índices (0-based) a borrar
+
+    for (let i = 0; i < rows.length; i++) {
+      if (isSeparator(rows[i])) {
+        const label = rows[i][0].trim();
+        const headerIdx = (rows[i+1] && isHeaderRow(rows[i+1])) ? i+1 : null;
+
+        if (seenLabels.has(label)) {
+          // Duplicado — marcar separador + encabezado para borrar,
+          // y la fila en blanco justo antes si está vacía
+          rowsToDelete.push(i);
+          if (headerIdx !== null) rowsToDelete.push(headerIdx);
+          if (i > 0 && isBlank(rows[i-1]) && !rowsToDelete.includes(i-1)) {
+            rowsToDelete.push(i-1);
+          }
+        } else {
+          seenLabels.add(label);
+        }
+      }
+    }
+
+    if (rowsToDelete.length === 0) return; // nada que limpiar
+
+    // Obtener sheetId de la pestaña actual
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId,title))`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const meta = await metaRes.json();
+    const sheetTab = meta.sheets.find(s => s.properties.title === sheetName);
+    if (!sheetTab) return;
+    const sheetTabId = sheetTab.properties.sheetId;
+
+    // Borrar de abajo hacia arriba para no desfasar los índices
+    const uniqueSorted = [...new Set(rowsToDelete)].sort((a,b) => b - a);
+    const requests = uniqueSorted.map(idx => ({
+      deleteDimension: {
+        range: { sheetId: sheetTabId, dimension: 'ROWS', startIndex: idx, endIndex: idx + 1 }
+      }
+    }));
+
+    await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requests })
+      }
+    );
+
+    console.log(`🧹 Limpieza: ${uniqueSorted.length} filas duplicadas eliminadas del Sheet`);
+  } catch(e) { console.warn('Cleanup duplicados falló', e); }
 }
 
 let separatorInProgress = false;
