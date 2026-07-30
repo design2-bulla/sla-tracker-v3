@@ -1547,11 +1547,48 @@ async function ensureMonthSheet() {
   showToast(`📅 Nueva pestaña creada: ${sheetName}`, 'success');
 }
 
+function columnLetter(n) {
+  // Convierte un número de columna (1-based) a letra de columna de Sheets (1->A, 26->Z, 27->AA...)
+  let s = '';
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+async function getLastRowIndex(sheetName, token) {
+  // Busca la última fila con contenido real en columna A, escaneando desde el final
+  // hacia atrás — así ignora huecos en medio del documento y encuentra el final real.
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:A20000`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  const rows = data.values || [];
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i] && rows[i][0] !== undefined && rows[i][0] !== '') return i; // 0-based
+  }
+  return -1; // hoja vacía
+}
+
 async function sheetsAppend(values) {
   const token = await getAccessToken();
+  const sheetName = currentSheet();
+
+  // Calculamos la fila EXACTA donde escribir, en vez de dejar que Sheets
+  // "adivine" el final de la tabla (values:append puede insertar en medio
+  // del documento si detecta un hueco antes del verdadero final).
+  const lastIdx = await getLastRowIndex(sheetName, token);
+  const startRow = lastIdx + 2; // 1-based, siguiente fila disponible
+  const numCols = Math.max(...values.map(r => r.length), 1);
+  const endRow = startRow + values.length - 1;
+  const range = `${sheetName}!A${startRow}:${columnLetter(numCols)}${endRow}`;
+
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${currentSheet()}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
-    { method:'POST', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+    { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ values }) }
   );
   if (!res.ok) throw new Error(await res.text());
@@ -1690,8 +1727,8 @@ async function ensureDaySeparator() {
 
     // Insert blank spacer + colored separator row + column headers
     await sheetsAppend([
-      ['','','','','','','','','','','','','',''],
-      [todayLabel,'','','','','','','','','','','','',''],
+      ['','','','','','','','','','','','','','','',''],
+      [todayLabel,'','','','','','','','','','','','','','',''],
       ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']
     ]);
 
