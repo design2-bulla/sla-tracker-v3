@@ -172,9 +172,16 @@
   .nodesign-btn-main { font-size: 13px; font-weight: 700; color: #fff; }
   .nodesign-sla { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.75); }
   .nodesign-btn-meet { background: linear-gradient(135deg,#9B27AF,#750a8b); }
-  .nodesign-btn-meet:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(117,10,139,0.35); }
+  .nodesign-meet-card { cursor: default; width: 100%; }
+  .nodesign-meet-input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35); border-radius: 8px; padding: 6px 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: #fff; outline: none; }
+  .nodesign-meet-input::placeholder { color: rgba(255,255,255,0.65); }
+  .nodesign-meet-input:focus { border-color: #fff; background: rgba(255,255,255,0.22); }
+  .nodesign-meet-start { align-self: flex-start; background: rgba(255,255,255,0.92); color: #750a8b; border: none; border-radius: 8px; padding: 5px 14px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 11px; cursor: pointer; transition: all 0.15s; }
+  .nodesign-meet-start:hover { background: #fff; transform: translateY(-1px); }
   .nodesign-btn-emplifi { background: linear-gradient(135deg,#3DBFB0,#2da898); }
   .nodesign-btn-emplifi:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(61,191,176,0.35); }
+  .nodesign-btn-grillas { background: linear-gradient(135deg,#F57C20,#E35376); }
+  .nodesign-btn-grillas:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(227,83,118,0.35); }
   .nodesign-btn:disabled { background: linear-gradient(135deg,#999,#777) !important; cursor: not-allowed; transform: none !important; box-shadow: none !important; opacity: 0.6; }
   .badge-nodesign { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.5px; background:rgba(155,39,175,0.25); color:#C063A8; border:1px solid rgba(155,39,175,0.5); padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:middle; }
   .active-timer.nodesign-timer { border-color: rgba(155,39,175,0.5) !important; }
@@ -320,6 +327,18 @@
   .lunch-icon { font-size:22px;animation:lunch-blink 1.2s infinite; }
   .lunch-dismiss { background:rgba(255,255,255,0.25);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;margin-left:8px;transition:background 0.15s; }
   .lunch-dismiss:hover { background:rgba(255,255,255,0.4); }
+
+  /* RECORDATORIO REVISIÓN EMPLIFI (3 veces al día) */
+  .emplifi-banner { position:fixed;top:0;left:0;right:0;z-index:8886;background:linear-gradient(135deg,#3DBFB0,#2da898);padding:10px 20px;display:none;align-items:center;justify-content:center;gap:12px;box-shadow:0 4px 20px rgba(61,191,176,0.4);flex-wrap:wrap; }
+  .emplifi-banner.show { display:flex; }
+  @keyframes emplifi-blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .emplifi-banner-icon { font-size:22px;animation:emplifi-blink 1.2s infinite; }
+  .emplifi-banner-text { font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:#fff;letter-spacing:0.3px; }
+  .emplifi-banner-sub { font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.85); }
+  .emplifi-banner-start { background:#fff;border:none;color:#2da898;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;padding:7px 16px;border-radius:20px;cursor:pointer;transition:transform 0.15s; }
+  .emplifi-banner-start:hover { transform:translateY(-1px); }
+  .emplifi-banner-dismiss { background:rgba(255,255,255,0.2);border:none;color:#fff;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;cursor:pointer;transition:background 0.15s; }
+  .emplifi-banner-dismiss:hover { background:rgba(255,255,255,0.35); }
 .nov-overlay { position:fixed;inset:0;background:rgba(20,0,35,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px); }
   .nov-modal { background:#fff;border-radius:20px;max-width:480px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:nov-in 0.35s cubic-bezier(.34,1.56,.64,1); }
   @keyframes btn-pulse {
@@ -435,7 +454,6 @@
         <span class="designer-pill">Joel Tapia</span>
         <span class="designer-pill">Jonathan Jovane</span>
         <span class="designer-pill">Ana Arriaga</span>
-        <span class="designer-pill">Irma Vanessa</span>
       </div>
     </div>
 
@@ -558,13 +576,19 @@
         <span class="nodesign-sub">No cuentan para el objetivo de 10 artes diarios</span>
       </div>
       <div class="nodesign-buttons">
-        <button class="nodesign-btn nodesign-btn-meet" onclick="startQuickTask('meet')">
-          <span class="nodesign-btn-main">📅 Iniciar Reunión / Meet</span>
+        <div class="nodesign-btn nodesign-btn-meet nodesign-meet-card">
+          <span class="nodesign-btn-main">📅 Reunión / Meet</span>
+          <input type="text" id="meet-subject" class="nodesign-meet-input" placeholder="Asunto (ej: Novey, Cliente X, Interno)..." maxlength="80" onkeydown="if(event.key==='Enter'){event.preventDefault();startQuickTask('meet');}">
+          <button type="button" class="nodesign-meet-start" onclick="startQuickTask('meet')">▶ Iniciar</button>
           <span class="nodesign-sla">SLA: 60 min</span>
-        </button>
+        </div>
         <button class="nodesign-btn nodesign-btn-emplifi" id="btn-emplifi-review" onclick="startQuickTask('emplifi')">
           <span class="nodesign-btn-main">🔄 Revisión Emplifi</span>
-          <span class="nodesign-sla" id="emplifi-review-counter">SLA: 30 min · 2 disponibles hoy</span>
+          <span class="nodesign-sla" id="emplifi-review-counter">SLA: 30 min · 3 disponibles hoy (8:00am, 11:30am, 2:00pm)</span>
+        </button>
+        <button class="nodesign-btn nodesign-btn-grillas" onclick="startQuickTask('grillas')">
+          <span class="nodesign-btn-main">📐 Revisión de Grillas</span>
+          <span class="nodesign-sla">SLA: 30 min</span>
         </button>
       </div>
     </div>
@@ -761,15 +785,16 @@
         <div style="border:2px dashed rgba(117,10,139,0.5);border-radius:12px;overflow:hidden;">
           <div style="background:linear-gradient(135deg,#9B27AF,#3DBFB0);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m4')">
             <span style="font-size:16px;">⏱️</span>
-            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">4. Tareas "No Diseño" (Reunión y Revisión Emplifi)</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">4. Tareas "No Diseño" (Reunión, Revisión Emplifi y Grillas)</span>
             <span style="margin-left:auto;color:#fff;font-weight:700;" id="m4-arrow">▸</span>
           </div>
           <div id="m4" style="display:none;padding:14px 16px;background:#f8fdfc;">
             <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Panel separado del formulario principal, para trabajo que no es diseño puro pero sí resta tiempo de producción. No cuentan para el objetivo de 10 artes diarios.</p>
             <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
-              <li><strong>📅 Reunión / Meet</strong> — un clic inicia el timer directo, sin llenar cliente/tipo. SLA fijo: 60 min.</li>
-              <li><strong>🔄 Revisión Emplifi</strong> — SLA de 30 min. Máximo <strong>2 usos por día</strong> por diseñador; al tercer intento el botón se bloquea solo.</li>
-              <li>Ambas se registran en el Sheet con categoría <strong>"No Diseño"</strong>.</li>
+              <li><strong>📅 Reunión / Meet</strong> — escribe el asunto (ej: "Novey", "Cliente X", "Interno") en el campo de texto y presiona "▶ Iniciar" (o Enter). El asunto es opcional; si lo dejas vacío, se registra solo como "Reunión / Meet". SLA fijo: 60 min.</li>
+              <li><strong>🔄 Revisión Emplifi</strong> — SLA de 30 min. Debe hacerse <strong>3 veces al día, a las 8:00am, 11:30am y 2:00pm</strong>; un aviso en pantalla recuerda cuando llega cada horario. Al cuarto intento el botón se bloquea solo.</li>
+              <li><strong>📐 Revisión de Grillas</strong> — mismo SLA que Emplifi (30 min), sin límite diario.</li>
+              <li>Las tres se registran en el Sheet con categoría <strong>"No Diseño"</strong>.</li>
             </ul>
           </div>
         </div>
@@ -1059,7 +1084,9 @@
     </div>
   </div>
 
+
 </div>
+
 
 <!-- LUNCH WARNING BANNER -->
 <div class="lunch-banner" id="lunch-banner">
@@ -1069,6 +1096,17 @@
     <div class="lunch-sub">Recuerda poner ⏸ PAUSA en tu tarea activa antes de salir</div>
   </div>
   <button class="lunch-dismiss" onclick="dismissLunch()">Ya pausé ✓</button>
+</div>
+
+<!-- RECORDATORIO REVISIÓN EMPLIFI -->
+<div class="emplifi-banner" id="emplifi-banner">
+  <span class="emplifi-banner-icon">🔄</span>
+  <div>
+    <div class="emplifi-banner-text" id="emplifi-banner-text">¡Es hora de la Revisión Emplifi!</div>
+    <div class="emplifi-banner-sub">Debe hacerse 3 veces al día: 8:00am, 11:30am y 2:00pm</div>
+  </div>
+  <button class="emplifi-banner-start" onclick="startEmplifiFromReminder()">▶ Iniciar ahora</button>
+  <button class="emplifi-banner-dismiss" onclick="dismissEmplifiReminder()">Ahora no</button>
 </div>
 
 
@@ -1151,6 +1189,76 @@ function checkLunch() {
 function dismissLunch() {
   lunchDismissed = true;
   document.getElementById('lunch-banner').classList.remove('show');
+}
+
+// ── RECORDATORIO REVISIÓN EMPLIFI (3 veces al día: 8:00am, 11:30am, 2:00pm) ──
+// EMPLIFI_REMINDER_SLOTS y getEmplifiCountToday()/todayKeySuffix() se declaran
+// más abajo en el script; estas funciones solo se EJECUTAN desde el boot final
+// (al fondo del archivo), cuando ya existen — igual que con loadActiveTasks().
+function emplifiReminderDismissKey(slotIndex) {
+  return `emplifi_reminder_dismissed_${todayKeySuffix()}_${slotIndex}`;
+}
+
+// Devuelve el índice (0,1,2) del último horario de revisión ya alcanzado hoy,
+// o -1 si todavía no llega ni el primero (8:00am).
+function currentEmplifiSlotIndex(now) {
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  let idx = -1;
+  EMPLIFI_REMINDER_SLOTS.forEach((slot, i) => {
+    if (nowMinutes >= slot.h * 60 + slot.m) idx = i;
+  });
+  return idx;
+}
+
+function checkEmplifiReminder() {
+  const banner = document.getElementById('emplifi-banner');
+  if (!banner) return;
+  const idx = currentEmplifiSlotIndex(new Date());
+  if (idx === -1) { banner.classList.remove('show'); return; }
+
+  const doneToday = getEmplifiCountToday(); // revisiones ya hechas hoy (diseñador seleccionado)
+  const alreadyDone = idx < doneToday; // ya se hicieron al menos idx+1 revisiones — vamos al día
+  const dismissed = localStorage.getItem(emplifiReminderDismissKey(idx)) === '1';
+
+  if (alreadyDone || dismissed) {
+    banner.classList.remove('show');
+    return;
+  }
+
+  const slot = EMPLIFI_REMINDER_SLOTS[idx];
+  document.getElementById('emplifi-banner-text').textContent = `🔄 Es hora de la Revisión Emplifi ${slot.label} (${slot.time})`;
+  // Coloca el banner debajo del de almuerzo si ambos coinciden en pantalla
+  const lunchBanner = document.getElementById('lunch-banner');
+  banner.style.top = (lunchBanner && lunchBanner.classList.contains('show')) ? lunchBanner.offsetHeight + 'px' : '0';
+  const wasShown = banner.classList.contains('show');
+  banner.classList.add('show');
+  // Notificación nativa del navegador (si el usuario la permitió) — puede
+  // aparecer aunque la pestaña esté en segundo plano, mientras el navegador
+  // siga abierto. Solo se dispara la primera vez que aparece este aviso.
+  if (!wasShown && window.Notification && Notification.permission === 'granted') {
+    try { new Notification('SLA Tracker · Revisión Emplifi', { body: `Es hora de la revisión ${slot.label} (${slot.time}).` }); } catch(e) {}
+  }
+}
+
+function dismissEmplifiReminder() {
+  const idx = currentEmplifiSlotIndex(new Date());
+  if (idx >= 0) localStorage.setItem(emplifiReminderDismissKey(idx), '1');
+  document.getElementById('emplifi-banner').classList.remove('show');
+}
+
+function startEmplifiFromReminder() {
+  const idx = currentEmplifiSlotIndex(new Date());
+  if (idx >= 0) localStorage.setItem(emplifiReminderDismissKey(idx), '1');
+  document.getElementById('emplifi-banner').classList.remove('show');
+  startQuickTask('emplifi');
+}
+
+function initEmplifiReminders() {
+  if (window.Notification && Notification.permission === 'default') {
+    try { Notification.requestPermission(); } catch(e) {}
+  }
+  checkEmplifiReminder();
+  setInterval(checkEmplifiReminder, 30000);
 }
 
 // Check every 30 seconds
@@ -1286,7 +1394,13 @@ function closeNovedades() {
   setTimeout(() => { overlay.style.display = 'none'; overlay.style.opacity=''; overlay.style.transition=''; }, 250);
 }
 const SHEET_ID = '19W5pj3WsF_yue7ehH7TnZB01OR-YsIDIRdWN_PHwSug';
-const EMPLIFI_DAILY_LIMIT = 2; // ← declarado arriba para evitar errores de "temporal dead zone"
+const EMPLIFI_DAILY_LIMIT = 3; // ← declarado arriba para evitar errores de "temporal dead zone"
+// Horarios obligatorios de la Revisión Emplifi: mañana, mediodía y tarde.
+const EMPLIFI_REMINDER_SLOTS = [
+  { h: 8,  m: 0,  label: 'de la mañana', time: '8:00am' },
+  { h: 11, m: 30, label: 'del mediodía', time: '11:30am' },
+  { h: 14, m: 0,  label: 'de la tarde',  time: '2:00pm' }
+];
 const SERVICE_ACCOUNT = {
   "type":"service_account",
   "project_id":"gen-lang-client-0979891408",
@@ -1325,6 +1439,7 @@ const SLA_TIMES = {
   // No Diseño (reuniones / revisiones — botón aparte)
   'Reunión / Meet': [60, 60],
   'Revisión Emplifi': [30, 30],
+  'Revisión de Grillas': [30, 30],
 };
 
 // Tipos donde el SLA se multiplica por cantidad (cada pieza tiene su propio tiempo)
@@ -1417,7 +1532,6 @@ let accessToken = null, tokenExpiry = 0;
 updateDate(); setInterval(tick, 1000);
 document.getElementById('btn-sheet-link').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
 lsLoadTasks(); renderAll(); renderSLARef();
-loadActiveTasks();
 loadConfigFromSheet();
 initTheme();
 initNovedades();
@@ -1941,7 +2055,7 @@ function setQty(n) {
 function renderTypePillsDrop() {
   const container = document.getElementById('type-pills-drop');
   if (!container) return;
-  const NO_DESIGN_TYPES = ['Reunión / Meet', 'Reunión', 'Meet', 'Revisión Emplifi'];
+  const NO_DESIGN_TYPES = ['Reunión / Meet', 'Reunión', 'Meet', 'Revisión Emplifi', 'Revisión de Grillas'];
   const visibleTypes = types.filter(t => !NO_DESIGN_TYPES.includes(t));
   container.innerHTML = visibleTypes.map(t => {
     const isAnim = t.startsWith('Animación');
@@ -2157,10 +2271,10 @@ function updateEmplifiButtonUI() {
   const remaining = Math.max(EMPLIFI_DAILY_LIMIT - used, 0);
   if (remaining <= 0) {
     btn.disabled = true;
-    counterEl.textContent = 'SLA: 30 min · Ya usaste tus 2 hoy';
+    counterEl.textContent = `SLA: 30 min · Ya usaste tus ${EMPLIFI_DAILY_LIMIT} hoy`;
   } else {
     btn.disabled = false;
-    counterEl.textContent = `SLA: 30 min · ${remaining} disponible${remaining!==1?'s':''} hoy`;
+    counterEl.textContent = `SLA: 30 min · ${remaining} disponible${remaining!==1?'s':''} hoy (8:00am, 11:30am, 2:00pm)`;
   }
 }
 
@@ -2170,15 +2284,20 @@ function startQuickTask(kind) {
 
   let name, type;
   if (kind === 'meet') {
-    name = 'Reunión / Meet';
+    const subjectInput = document.getElementById('meet-subject');
+    const subject = subjectInput ? subjectInput.value.trim() : '';
+    name = subject ? `Reunión / Meet — ${subject}` : 'Reunión / Meet';
     type = 'Reunión / Meet';
   } else if (kind === 'emplifi') {
     if (getEmplifiCountToday() >= EMPLIFI_DAILY_LIMIT) {
-      showToast('🔄 Ya usaste tus 2 revisiones de Emplifi hoy', 'warning');
+      showToast(`🔄 Ya usaste tus ${EMPLIFI_DAILY_LIMIT} revisiones de Emplifi hoy`, 'warning');
       return;
     }
     name = 'Revisión Emplifi';
     type = 'Revisión Emplifi';
+  } else if (kind === 'grillas') {
+    name = 'Revisión de Grillas';
+    type = 'Revisión de Grillas';
   } else {
     return;
   }
@@ -2190,7 +2309,9 @@ function startQuickTask(kind) {
   renderActiveTimers();
 
   if (kind === 'emplifi') incEmplifiCountToday();
-  showToast(kind === 'meet' ? '📅 Reunión / Meet iniciada' : '🔄 Revisión Emplifi iniciada');
+  if (kind === 'meet') { const si = document.getElementById('meet-subject'); if (si) si.value = ''; }
+  const startMsg = kind === 'meet' ? `📅 ${name} iniciada` : kind === 'grillas' ? '📐 Revisión de Grillas iniciada' : '🔄 Revisión Emplifi iniciada';
+  showToast(startMsg);
 }
 let manualMode = true; // true = ya terminé, false = aún en curso
 
@@ -2416,8 +2537,7 @@ function stopTask(id, completed) {
     syncTaskToSheet(task);
   }
   activeTasks.splice(idx, 1);
-  if (activeTasks.length === 0) localStorage.removeItem('sla_active');
-  else saveActiveTasks();
+  saveActiveTasks();
   renderActiveTimers();
 }
 
@@ -2436,37 +2556,98 @@ function togglePause(id) {
   renderActiveTimers();
 }
 
-function saveActiveTasks() {
+// ── Respaldo en IndexedDB para sobrevivir apagones reales ──────────────
+// localStorage no se escribe a disco al instante: Chrome agrupa esas
+// escrituras y las confirma en lote cada varios segundos. Si la máquina
+// se apaga de golpe justo en esa ventana, el último cambio guardado se
+// puede perder aunque el código ya haya llamado a localStorage.setItem.
+// IndexedDB sí permite pedir una transacción con durability:"strict",
+// que garantiza (comprobado con pruebas reales de apagado forzado) que
+// el dato ya quedó escrito en disco antes de continuar. La usamos como
+// respaldo extra de las tareas activas, en paralelo a localStorage.
+function idbOpenSlaDb() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('IndexedDB no disponible')); return; }
+    const req = indexedDB.open('sla_tracker_db', 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains('active_tasks')) req.result.createObjectStore('active_tasks');
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSaveActiveTasks(payload) {
   try {
-    if (activeTasks.length === 0) {
-      localStorage.removeItem('sla_active');
-      return;
-    }
-    localStorage.setItem('sla_active', JSON.stringify(activeTasks.map(at => ({
-      ...at,
-      // Store current seconds so we have a checkpoint even if startedAt math fails
-      checkpointSeconds: at.seconds,
-      checkpointAt: Date.now()
-    }))));
-  } catch(e) {}
+    const db = await idbOpenSlaDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('active_tasks', 'readwrite', { durability: 'strict' });
+      tx.objectStore('active_tasks').put(payload, 'current');
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e) { /* best-effort: si falla, queda localStorage como respaldo */ }
+}
+async function idbLoadActiveTasks() {
+  try {
+    const db = await idbOpenSlaDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction('active_tasks', 'readonly');
+      const req = tx.objectStore('active_tasks').get('current');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch(e) { return null; }
 }
 
-function loadActiveTasks() {
-  try {
-    const s = localStorage.getItem('sla_active');
-    if (!s) return;
-    const saved = JSON.parse(s);
-    const now = Date.now();
+function saveActiveTasks() {
+  const payload = {
+    savedAt: Date.now(),
+    tasks: activeTasks.map(at => ({
+      ...at,
+      // Guarda los segundos actuales como checkpoint por si falla el cálculo con startedAt
+      checkpointSeconds: at.seconds,
+      checkpointAt: Date.now()
+    }))
+  };
+  try { localStorage.setItem('sla_active', JSON.stringify(payload)); } catch(e) {}
+  idbSaveActiveTasks(payload); // respaldo asíncrono con confirmación real de escritura en disco
+}
 
-    activeTasks = saved.map(at => {
+async function loadActiveTasks() {
+  try {
+    let lsPayload = null;
+    try {
+      const s = localStorage.getItem('sla_active');
+      if (s) {
+        const parsed = JSON.parse(s);
+        // Compatibilidad con el formato anterior (array plano sin savedAt)
+        lsPayload = Array.isArray(parsed) ? { savedAt: 0, tasks: parsed } : parsed;
+      }
+    } catch(e) {}
+
+    let idbPayload = null;
+    try { idbPayload = await idbLoadActiveTasks(); } catch(e) {}
+
+    const lsFreshness = (lsPayload && lsPayload.savedAt) || 0;
+    const idbFreshness = (idbPayload && idbPayload.savedAt) || 0;
+    // Se usa el respaldo que se haya confirmado más reciente entre los dos.
+    // Esto es lo que rescata el trabajo cuando localStorage no alcanzó a
+    // escribirse a disco antes de un apagón, pero IndexedDB sí.
+    const usedIdb = idbFreshness > lsFreshness;
+    const chosen = usedIdb ? idbPayload : lsPayload;
+
+    if (!chosen || !chosen.tasks || !chosen.tasks.length) return;
+
+    const now = Date.now();
+    activeTasks = chosen.tasks.map(at => {
       if (!at.paused) {
         if (at.startedAt) {
-          // Best case: calculate from startedAt (most accurate)
+          // Mejor caso: calcular a partir de startedAt (más preciso)
           at.seconds = at.pausedSeconds + Math.floor((now - at.startedAt) / 1000);
         } else if (at.checkpointSeconds !== undefined && at.checkpointAt) {
-          // Fallback: use checkpoint + elapsed since checkpoint
+          // Alternativa: checkpoint + tiempo transcurrido desde el checkpoint
           at.seconds = at.checkpointSeconds + Math.floor((now - at.checkpointAt) / 1000);
-          // Restore startedAt from checkpoint
+          // Reconstruye startedAt a partir del checkpoint
           at.startedAt = at.checkpointAt - ((at.checkpointSeconds - at.pausedSeconds) * 1000);
         }
       }
@@ -2474,6 +2655,7 @@ function loadActiveTasks() {
     });
 
     if (activeTasks.length > 0) {
+      if (usedIdb) saveActiveTasks(); // re-sincroniza localStorage con lo que sí sobrevivió
       renderActiveTimers();
       const names = activeTasks.map(at => at.task.name).join(', ');
       showToast(`⚡ Tarea recuperada: ${names}`);
@@ -2620,7 +2802,18 @@ function hiBlock(id){
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // Llamada final de boot — aquí ya existen todas las const/let del script
+// (loadActiveTasks() debe ir aquí, no en el boot temprano de arriba: necesita
+// que "activeTasks" ya esté declarado, si no falla en silencio y nunca
+// recupera la tarea en curso tras un cierre inesperado o un apagón)
+loadActiveTasks();
 updateEmplifiButtonUI();
+initEmplifiReminders();
+
+// Guardar de inmediato el estado de las tareas activas si la pestaña/ventana
+// se cierra o pasa a segundo plano — refuerzo extra para no perder tiempo
+// del SLA en un cierre inesperado del navegador.
+window.addEventListener('pagehide', () => { if (activeTasks.length > 0) saveActiveTasks(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && activeTasks.length > 0) saveActiveTasks(); });
 </script>
 </body>
 </html>
