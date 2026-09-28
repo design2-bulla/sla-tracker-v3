@@ -161,6 +161,8 @@
   @keyframes shake-block { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
 
   /* RESUMEN DEL DÍA */
+  .resumen-bar { display:flex;flex-direction:column;gap:6px;background:var(--form-bg);border:1px solid rgba(117,10,139,0.3);border-radius:12px;padding:8px 14px 10px; }
+  .resumen-bar-label { font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--label-color);text-transform:uppercase; }
   .resumen-buttons { display:flex;gap:10px;flex-wrap:wrap;margin:14px 0; }
   .resumen-btn { background:var(--form-bg);border:2px solid rgba(117,10,139,0.3);color:var(--label-color);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px; }
   .resumen-btn:hover { border-color:#750a8b;background:rgba(117,10,139,0.08); }
@@ -636,6 +638,7 @@
         </div>
         <div class="manual-footer">
           <button class="manual-btn-cancel" onclick="closeResumenModal()">Cerrar</button>
+          <button class="manual-btn-cancel" id="btn-resumen-refresh" onclick="refreshResumen()">🔄 Actualizar</button>
           <button class="manual-btn-confirm" onclick="copyResumenText()">📋 Copiar</button>
         </div>
       </div>
@@ -685,9 +688,12 @@
         <div class="task-count" id="task-count">0 tareas registradas</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div class="resumen-buttons" style="margin:0;">
-          <button class="resumen-btn" id="btn-resumen-personal" onclick="generatePersonalSummary()">📝 Mi resumen del día</button>
-          <button class="resumen-btn" id="btn-resumen-equipo" onclick="generateTeamSummary()">📊 Resumen de equipo</button>
+        <div class="resumen-bar">
+          <div class="resumen-bar-label">📊 Resumen del día</div>
+          <div class="resumen-buttons" style="margin:0;">
+            <button class="resumen-btn" id="btn-resumen-personal" onclick="generatePersonalSummary()">📝 Mi resumen del día</button>
+            <button class="resumen-btn" id="btn-resumen-equipo" onclick="generateTeamSummary()">📊 Resumen de equipo</button>
+          </div>
         </div>
         <!-- OBJETIVO DIARIO -->
         <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;">
@@ -1525,6 +1531,7 @@ const DEF_TYPES   = [
 // ── STATE ────────────────────────────────────────────────────────
 let tasks = [], selClient = '', selTypes = [], selDesigner = '', selQty = 1, selCategory = '';
 let clients = [...DEF_CLIENTS];
+let lastResumenType = null; // 'personal' | 'team' — para el botón de refrescar del modal de resumen
 let types   = [...DEF_TYPES];
 const missingTypes = DEF_TYPES.filter(t => !types.includes(t));
 if (missingTypes.length) { types = [...types, ...missingTypes]; }
@@ -2715,8 +2722,11 @@ function copyResumenText() {
 
 async function generatePersonalSummary() {
   if (!selDesigner) { showToast('👤 Selecciona tu nombre de diseñador arriba', 'warning'); return; }
+  lastResumenType = 'personal';
   const btn = document.getElementById('btn-resumen-personal');
+  const refreshBtn = document.getElementById('btn-resumen-refresh');
   btn.disabled = true;
+  if (refreshBtn) refreshBtn.disabled = true;
   try {
     const text = buildPersonalSummaryText();
     const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
@@ -2735,12 +2745,16 @@ async function generatePersonalSummary() {
     }
   } finally {
     btn.disabled = false;
+    if (refreshBtn) refreshBtn.disabled = false;
   }
 }
 
 async function generateTeamSummary() {
+  lastResumenType = 'team';
   const btn = document.getElementById('btn-resumen-equipo');
+  const refreshBtn = document.getElementById('btn-resumen-refresh');
   btn.disabled = true;
+  if (refreshBtn) refreshBtn.disabled = true;
   showToast('📊 Generando resumen de equipo…');
   let text;
   try {
@@ -2750,6 +2764,7 @@ async function generateTeamSummary() {
     showToast('No se pudo leer el Sheet para generar el resumen — revisa tu conexión', 'error');
     console.error(e);
     btn.disabled = false;
+    if (refreshBtn) refreshBtn.disabled = false;
     return;
   }
   const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
@@ -2767,7 +2782,14 @@ async function generateTeamSummary() {
     console.error(e);
   } finally {
     btn.disabled = false;
+    if (refreshBtn) refreshBtn.disabled = false;
   }
+}
+
+function refreshResumen() {
+  if (lastResumenType === 'personal') return generatePersonalSummary();
+  if (lastResumenType === 'team') return generateTeamSummary();
+  showToast('Primero genera un resumen con uno de los botones de arriba', 'warning');
 }
 
 function stopTask(id, completed) {
