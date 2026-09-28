@@ -160,6 +160,17 @@
   .manual-toggle-btn:not(.active):hover { border-color:#750a8b;color:#750a8b; }
   @keyframes shake-block { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
 
+  /* RESUMEN DEL DÍA */
+  .resumen-buttons { display:flex;gap:10px;flex-wrap:wrap;margin:14px 0; }
+  .resumen-btn { background:var(--form-bg);border:2px solid rgba(117,10,139,0.3);color:var(--label-color);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px; }
+  .resumen-btn:hover { border-color:#750a8b;background:rgba(117,10,139,0.08); }
+  .resumen-btn:disabled { opacity:0.5;cursor:not-allowed; }
+  .resumen-modal { background:var(--form-bg);border-radius:20px;max-width:640px;width:100%;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:nov-in 0.3s cubic-bezier(.34,1.56,.64,1); }
+  .resumen-textarea { width:100%;box-sizing:border-box;min-height:340px;background:var(--input-bg);color:var(--input-text);border:1px solid rgba(117,10,139,0.2);font-family:'DM Mono',monospace;font-size:12px;line-height:1.6;padding:14px;border-radius:10px;outline:none;resize:vertical;white-space:pre-wrap; }
+  .resumen-status { font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px;min-height:16px; }
+  .resumen-status.ok { color:#2da898; }
+  .resumen-status.error { color:var(--danger); }
+
   /* NO DISEÑO PANEL */
   .nodesign-card { background: var(--form-bg); border: 2px dashed rgba(117,10,139,0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 22px; }
   .nodesign-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -611,6 +622,25 @@
       </div>
     </div>
 
+    <!-- RESUMEN DEL DÍA MODAL -->
+    <div class="manual-overlay" id="resumen-overlay" style="display:none;">
+      <div class="resumen-modal">
+        <div class="manual-header">
+          <div class="manual-tag" id="resumen-modal-tag">RESUMEN DEL DÍA</div>
+          <div class="manual-title" id="resumen-modal-title">Resumen</div>
+          <div class="manual-sub" id="resumen-modal-sub">—</div>
+        </div>
+        <div class="manual-body">
+          <textarea class="resumen-textarea" id="resumen-text" readonly></textarea>
+          <div class="resumen-status" id="resumen-status"></div>
+        </div>
+        <div class="manual-footer">
+          <button class="manual-btn-cancel" onclick="closeResumenModal()">Cerrar</button>
+          <button class="manual-btn-confirm" onclick="copyResumenText()">📋 Copiar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MANUAL ENTRY MODAL -->
     <div class="manual-overlay" id="manual-overlay" style="display:none;">
       <div class="manual-modal">
@@ -654,16 +684,23 @@
         <div class="section-label">REGISTRO DEL DÍA</div>
         <div class="task-count" id="task-count">0 tareas registradas</div>
       </div>
-      <!-- OBJETIVO DIARIO -->
-      <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:4px;">🎯 Objetivo diario</div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:6px;overflow:hidden;">
-            <div id="goal-bar" style="height:100%;background:#fff;border-radius:6px;transition:width 0.4s ease;width:0%"></div>
-          </div>
-          <span id="goal-text" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">0 / 10</span>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div class="resumen-buttons" style="margin:0;">
+          <button class="resumen-btn" id="btn-resumen-personal" onclick="generatePersonalSummary()">📝 Mi resumen del día</button>
+          <button class="resumen-btn" id="btn-resumen-equipo" onclick="generateTeamSummary()">📊 Resumen de equipo</button>
         </div>
-        <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px;">10 artes pendientes</div>
+        <!-- OBJETIVO DIARIO -->
+        <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:4px;">🎯 Objetivo diario</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:6px;overflow:hidden;">
+              <div id="goal-bar" style="height:100%;background:#fff;border-radius:6px;transition:width 0.4s ease;width:0%"></div>
+            </div>
+            <span id="goal-text" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">0 / 10</span>
+          </div>
+          <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px;">10 artes pendientes</div>
+          <div id="novey-goal-note" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.95);margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.25);">🏠 Novey nuevos hoy: <strong id="novey-new-count">0</strong></div>
+        </div>
       </div>
     </div>
     <div class="tasks-list" id="tasks-list">
@@ -825,7 +862,7 @@
             <span style="margin-left:auto;color:#fff;font-weight:700;" id="m6-arrow">▸</span>
           </div>
           <div id="m6" style="display:none;padding:14px 16px;background:#fff8f0;">
-            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes diarios</strong> (entre ajustes y artes nuevos). La barra se llena con cada tarea completada y se pone verde con un mensaje de felicitación al llegar a 10.</p>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes nuevos diarios</strong>. Solo cuentan artes nuevos — los ajustes y las tareas de "No Diseño" (Reunión, Emplifi, Grillas) no suman. Cada arte nuevo de Novey vale <strong>1.5</strong> en vez de 1, por ser la cuenta principal de la casa; además hay un contador aparte "🏠 Novey nuevos hoy" que muestra ese número sin mezclar. La barra se pone verde con un mensaje de felicitación al llegar a 10.</p>
           </div>
         </div>
 
@@ -885,6 +922,23 @@
               <li>Cada mes tiene su propia pestaña, creada automáticamente (ej: "Julio 2026").</li>
               <li>Al completar la primera tarea del día se inserta un separador con la fecha en rosa.</li>
               <li>El indicador <strong>"✓ Conectado a Google Sheets"</strong> en el encabezado confirma que la sincronización funciona.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- M11 -->
+        <div style="border:2px solid #3DBFB0;border-radius:12px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#3DBFB0,#2da898);padding:10px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleHelp('m11')">
+            <span style="font-size:16px;">📝</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px;">11. Resumen del día (personal y de equipo)</span>
+            <span style="margin-left:auto;color:#fff;font-weight:700;" id="m11-arrow">▸</span>
+          </div>
+          <div id="m11" style="display:none;padding:14px 16px;background:#f0fbfa;">
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;margin-bottom:10px;">Dos botones abajo del "Registro del día" arman un reporte de texto listo para copiar y compartir (formato WhatsApp), y además lo guardan como una fila nueva en la pestaña <strong>"Resumen"</strong> del Sheet.</p>
+            <ul style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:2;padding-left:18px;">
+              <li><strong>📝 Mi resumen del día</strong> — solo tus tareas completadas hoy (artes nuevos, ajustes, piezas totales).</li>
+              <li><strong>📊 Resumen de equipo</strong> — lee el Sheet completo y arma el desglose de todos los diseñadores que trabajaron hoy, más un bloque aparte para Novey con su acumulado mensual de artes nuevos.</li>
+              <li>En el modal que se abre, el botón <strong>"📋 Copiar"</strong> lo manda al portapapeles para pegarlo donde quieras.</li>
             </ul>
           </div>
         </div>
@@ -1401,6 +1455,15 @@ const EMPLIFI_REMINDER_SLOTS = [
   { h: 11, m: 30, label: 'del mediodía', time: '11:30am' },
   { h: 14, m: 0,  label: 'de la tarde',  time: '2:00pm' }
 ];
+// Meta diaria: cada arte nuevo de Novey pesa más que uno de otra cuenta,
+// porque Novey es la cuenta principal de la casa. Los ajustes y las tareas
+// de "No Diseño" (reunión, Emplifi, grillas) no cuentan para la meta.
+const DAILY_GOAL = 10;
+const NOVEY_GOAL_WEIGHT = 1.5;
+function taskGoalWeight(t) {
+  if (t.category === 'No Diseño' || t.isAjuste) return 0;
+  return t.client === 'Novey' ? NOVEY_GOAL_WEIGHT : 1;
+}
 const SERVICE_ACCOUNT = {
   "type":"service_account",
   "project_id":"gen-lang-client-0979891408",
@@ -1659,6 +1722,44 @@ async function ensureMonthSheet() {
   showToast(`📅 Nueva pestaña creada: ${sheetName}`, 'success');
 }
 
+async function ensureResumenSheet() {
+  const token = await getAccessToken();
+  const metaRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(title))`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const meta = await metaRes.json();
+  const exists = (meta.sheets || []).some(s => s.properties.title === 'Resumen');
+  if (exists) return;
+
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests: [{ addSheet: { properties: { title: 'Resumen' } } }] })
+    }
+  );
+  await sheetsAppend([['Fecha y hora','Tipo','Resumen']], 'Resumen');
+}
+
+// Lee todas las filas de la pestaña del mes actual (para armar el resumen de
+// equipo hace falta ver el trabajo de TODO el equipo, no solo lo que hay en
+// este navegador — por eso se lee directo del Sheet en vez de usar `tasks`).
+async function fetchMonthSheetRows() {
+  const token = await getAccessToken();
+  const sheetName = currentSheet();
+  const res = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:P20000`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  const data = await res.json();
+  const rows = data.values || [];
+  // Filas reales de tarea siempre tienen Diseñador (col B) — los separadores,
+  // encabezados repetidos y filas en blanco no, así que basta con eso para filtrarlas.
+  return rows.filter(r => r[1]);
+}
+
 function columnLetter(n) {
   // Convierte un número de columna (1-based) a letra de columna de Sheets (1->A, 26->Z, 27->AA...)
   let s = '';
@@ -1685,9 +1786,9 @@ async function getLastRowIndex(sheetName, token) {
   return -1; // hoja vacía
 }
 
-async function sheetsAppend(values) {
+async function sheetsAppend(values, sheetName) {
   const token = await getAccessToken();
-  const sheetName = currentSheet();
+  sheetName = sheetName || currentSheet();
 
   // Calculamos la fila EXACTA donde escribir, en vez de dejar que Sheets
   // "adivine" el final de la tabla (values:append puede insertar en medio
@@ -2525,6 +2626,150 @@ function confirmCancelYes() {
   closeCancelConfirm();
 }
 
+// ── RESUMEN DEL DÍA (personal y de equipo) ──────────────────────────
+function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function buildPersonalSummaryText() {
+  const name = selDesigner || 'Sin diseñador';
+  const done = tasks.filter(t => t.status === 'Completada');
+  const nuevos = done.filter(t => t.category !== 'No Diseño' && !t.isAjuste).length;
+  const ajustes = done.filter(t => t.isAjuste).length;
+  const piezas = done.filter(t => t.category !== 'No Diseño').reduce((s,t) => s + (t.qty || 1), 0);
+  const total = done.length;
+  const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
+  return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Total: ${total} tarea${total!==1?'s':''}*`;
+}
+
+// monthRows: todas las filas de tarea de la pestaña del mes actual (de TODO
+// el equipo, leídas directo del Sheet). Columnas: 0 Fecha, 1 Diseñador,
+// 2 Tarea, 3 Cliente, 4 Categoría, 5 Tipo, 6 Cant. Piezas, 7 Ajuste, ...
+function buildTeamSummaryText(monthRows) {
+  const todayDate = new Date().toLocaleDateString('es-PA');
+  const todayRows = monthRows.filter(r => r[0] === todayDate);
+  const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long', year:'numeric' }));
+
+  if (!todayRows.length) {
+    return `📊 *Reporte del día — ${fecha}*\n\nTodavía no hay tareas completadas hoy en el Sheet.`;
+  }
+
+  const isNew = r => r[4] !== 'No Diseño' && r[7] !== 'Sí';
+  const isAjuste = r => r[7] === 'Sí';
+  const piezasDe = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + (parseInt(r[6],10) || 1), 0);
+
+  const byDesigner = {};
+  todayRows.forEach(r => { (byDesigner[r[1]] = byDesigner[r[1]] || []).push(r); });
+
+  let out = `📊 *Reporte del día — ${fecha}*\n`;
+  Object.keys(byDesigner).sort().forEach(designer => {
+    const rows = byDesigner[designer];
+    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${rows.filter(isNew).length}\n🔧 Ajustes: ${rows.filter(isAjuste).length}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Total: ${rows.length} tarea${rows.length!==1?'s':''}*\n`;
+  });
+
+  const noveyToday = todayRows.filter(r => r[3] === 'Novey');
+  // Acumulado del mes: solo artes nuevos de Novey, sin ajustes — misma regla
+  // que usa el master oficial contra los 300 entregables/mes del contrato.
+  const noveyNuevosMes = monthRows.filter(r => r[3] === 'Novey' && isNew(r)).length;
+  out += `\n🏠 *NOVEY (cuenta principal)*\n📋 Tareas: ${noveyToday.length}\n🆕 Artes nuevos: ${noveyToday.filter(isNew).length}\n🔧 Ajustes: ${noveyToday.filter(isAjuste).length}\n🎨 Piezas: ${piezasDe(noveyToday)}\n📈 Acumulado del mes (según el Tracker, solo artes nuevos): *${noveyNuevosMes}*\n_(puede no incluir piezas del CM que no pasan por el Tracker — usa el número oficial del master si lo tienes)_\n`;
+
+  const otras = [...new Set(todayRows.filter(r => r[3] && r[3] !== 'Novey' && r[3] !== '—').map(r => r[3]))];
+  if (otras.length) out += `\n📌 *Otras cuentas trabajadas hoy:*\n` + otras.map(c => `• ${c}`).join('\n') + '\n';
+
+  const totalPiezasHoy = piezasDe(todayRows);
+  const numDesigners = Object.keys(byDesigner).length;
+  out += `\n💪 El equipo completó *${totalPiezasHoy} pieza${totalPiezasHoy!==1?'s':''}* hoy entre ${numDesigners} diseñador${numDesigners!==1?'es':''}.`;
+  return out;
+}
+
+function openResumenModal(tag, title, sub, text) {
+  document.getElementById('resumen-modal-tag').textContent = tag;
+  document.getElementById('resumen-modal-title').textContent = title;
+  document.getElementById('resumen-modal-sub').textContent = sub;
+  document.getElementById('resumen-text').value = text;
+  const status = document.getElementById('resumen-status');
+  status.textContent = '';
+  status.className = 'resumen-status';
+  document.getElementById('resumen-overlay').style.display = 'flex';
+}
+
+function closeResumenModal() {
+  document.getElementById('resumen-overlay').style.display = 'none';
+}
+
+function copyResumenText() {
+  const ta = document.getElementById('resumen-text');
+  const status = document.getElementById('resumen-status');
+  const finish = ok => {
+    status.textContent = ok ? '✓ Copiado al portapapeles' : 'No se pudo copiar — selecciona el texto manualmente';
+    status.className = 'resumen-status ' + (ok ? 'ok' : 'error');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(() => finish(true)).catch(() => {
+      ta.select();
+      try { finish(document.execCommand('copy')); } catch(e) { finish(false); }
+    });
+  } else {
+    ta.select();
+    try { finish(document.execCommand('copy')); } catch(e) { finish(false); }
+  }
+}
+
+async function generatePersonalSummary() {
+  if (!selDesigner) { showToast('👤 Selecciona tu nombre de diseñador arriba', 'warning'); return; }
+  const btn = document.getElementById('btn-resumen-personal');
+  btn.disabled = true;
+  try {
+    const text = buildPersonalSummaryText();
+    const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
+    openResumenModal('MI RESUMEN', `Resumen de ${selDesigner}`, fecha, text);
+    const status = document.getElementById('resumen-status');
+    status.textContent = 'Guardando en el Sheet…';
+    try {
+      await ensureResumenSheet();
+      await sheetsAppend([[new Date().toLocaleString('es-PA'), `Personal - ${selDesigner}`, text]], 'Resumen');
+      status.textContent = '✓ Guardado en la pestaña "Resumen" del Sheet';
+      status.className = 'resumen-status ok';
+    } catch(e) {
+      status.textContent = 'No se pudo guardar en el Sheet (el resumen sigue disponible aquí para copiar)';
+      status.className = 'resumen-status error';
+      console.error(e);
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function generateTeamSummary() {
+  const btn = document.getElementById('btn-resumen-equipo');
+  btn.disabled = true;
+  showToast('📊 Generando resumen de equipo…');
+  let text;
+  try {
+    const monthRows = await fetchMonthSheetRows();
+    text = buildTeamSummaryText(monthRows);
+  } catch(e) {
+    showToast('No se pudo leer el Sheet para generar el resumen — revisa tu conexión', 'error');
+    console.error(e);
+    btn.disabled = false;
+    return;
+  }
+  const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
+  openResumenModal('RESUMEN DE EQUIPO', 'Resumen de equipo', fecha, text);
+  const status = document.getElementById('resumen-status');
+  status.textContent = 'Guardando en el Sheet…';
+  try {
+    await ensureResumenSheet();
+    await sheetsAppend([[new Date().toLocaleString('es-PA'), 'Equipo', text]], 'Resumen');
+    status.textContent = '✓ Guardado en la pestaña "Resumen" del Sheet';
+    status.className = 'resumen-status ok';
+  } catch(e) {
+    status.textContent = 'No se pudo guardar en el Sheet (el resumen sigue disponible aquí para copiar)';
+    status.className = 'resumen-status error';
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function stopTask(id, completed) {
   const idx = activeTasks.findIndex(at => at.id === id);
   if (idx === -1) return;
@@ -2712,19 +2957,23 @@ function renderTasks() {
   document.getElementById('ajuste-count').textContent=tasks.filter(t=>t.isAjuste).length;
   document.getElementById('emplifi-count').textContent=tasks.filter(t=>t.isEmplifi).length;
 
-  // Daily goal update
-  const DAILY_GOAL = 10;
-  const completedToday = tasks.filter(t=>t.status==='Completada').length;
-  const pctGoal = Math.min(Math.round((completedToday/DAILY_GOAL)*100), 100);
-  const remaining = Math.max(DAILY_GOAL - completedToday, 0);
+  // Daily goal update — los artes nuevos de Novey pesan más (NOVEY_GOAL_WEIGHT);
+  // ajustes y tareas "No Diseño" no cuentan (ver taskGoalWeight()).
+  const doneTasksToday = tasks.filter(t=>t.status==='Completada');
+  const weightedToday = doneTasksToday.reduce((sum,t)=>sum+taskGoalWeight(t), 0);
+  const noveyNewToday = doneTasksToday.filter(t=>t.client==='Novey' && !t.isAjuste && t.category!=='No Diseño').length;
+  const fmtGoalNum = n => Number.isInteger(n) ? n : n.toFixed(1);
+  const pctGoal = Math.min(Math.round((weightedToday/DAILY_GOAL)*100), 100);
+  const remaining = Math.max(DAILY_GOAL - weightedToday, 0);
   document.getElementById('goal-bar').style.width = pctGoal + '%';
-  document.getElementById('goal-text').textContent = `${completedToday} / ${DAILY_GOAL}`;
+  document.getElementById('goal-text').textContent = `${fmtGoalNum(weightedToday)} / ${DAILY_GOAL}`;
+  document.getElementById('novey-new-count').textContent = noveyNewToday;
   const goalSub = document.getElementById('goal-sub');
-  if (completedToday >= DAILY_GOAL) {
+  if (weightedToday >= DAILY_GOAL) {
     goalSub.textContent = '🎉 ¡Meta del día cumplida!';
     document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#2da898,#3DBFB0)';
   } else {
-    goalSub.textContent = `${remaining} arte${remaining!==1?'s':''} pendiente${remaining!==1?'s':''}`;
+    goalSub.textContent = `${fmtGoalNum(remaining)} arte${remaining!==1?'s':''} pendiente${remaining!==1?'s':''}`;
     document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#F57C20,#F5C842)';
   }
 }
