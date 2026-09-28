@@ -2636,20 +2636,34 @@ function confirmCancelYes() {
 // ── RESUMEN DEL DÍA (personal y de equipo) ──────────────────────────
 function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-function buildPersonalSummaryText() {
+// Reglas de conteo compartidas entre el resumen personal y el de equipo —
+// ambos leen las mismas filas del Sheet (fuente de verdad), así que si se
+// corrige un dato directamente en el Sheet, los dos resúmenes lo reflejan.
+// Columnas: 0 Fecha, 1 Diseñador, 2 Tarea, 3 Cliente, 4 Categoría, 5 Tipo,
+// 6 Cant. Piezas, 7 Ajuste, ...
+const isNewRow = r => r[4] !== 'No Diseño' && r[7] !== 'Sí';
+const isAjusteRow = r => r[7] === 'Sí';
+const piezasDeRows = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + (parseInt(r[6],10) || 1), 0);
+
+// monthRows: todas las filas de tarea de la pestaña del mes actual, leídas
+// directo del Sheet (fuente de verdad — refleja cualquier corrección manual).
+function buildPersonalSummaryText(monthRows) {
   const name = selDesigner || 'Sin diseñador';
-  const done = tasks.filter(t => t.status === 'Completada');
-  const nuevos = done.filter(t => t.category !== 'No Diseño' && !t.isAjuste).length;
-  const ajustes = done.filter(t => t.isAjuste).length;
-  const piezas = done.filter(t => t.category !== 'No Diseño').reduce((s,t) => s + (t.qty || 1), 0);
-  const total = done.length;
+  const todayDate = new Date().toLocaleDateString('es-PA');
+  const rows = (monthRows || []).filter(r => r[0] === todayDate && r[1] === name);
   const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
+
+  if (!rows.length) {
+    return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\nTodavía no tienes tareas completadas hoy en el Sheet.`;
+  }
+
+  const nuevos = rows.filter(isNewRow).length;
+  const ajustes = rows.filter(isAjusteRow).length;
+  const piezas = piezasDeRows(rows);
+  const total = rows.length;
   return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Total: ${total} tarea${total!==1?'s':''}*`;
 }
 
-// monthRows: todas las filas de tarea de la pestaña del mes actual (de TODO
-// el equipo, leídas directo del Sheet). Columnas: 0 Fecha, 1 Diseñador,
-// 2 Tarea, 3 Cliente, 4 Categoría, 5 Tipo, 6 Cant. Piezas, 7 Ajuste, ...
 function buildTeamSummaryText(monthRows) {
   const todayDate = new Date().toLocaleDateString('es-PA');
   const todayRows = monthRows.filter(r => r[0] === todayDate);
@@ -2659,9 +2673,7 @@ function buildTeamSummaryText(monthRows) {
     return `📊 *Reporte del día — ${fecha}*\n\nTodavía no hay tareas completadas hoy en el Sheet.`;
   }
 
-  const isNew = r => r[4] !== 'No Diseño' && r[7] !== 'Sí';
-  const isAjuste = r => r[7] === 'Sí';
-  const piezasDe = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + (parseInt(r[6],10) || 1), 0);
+  const isNew = isNewRow, isAjuste = isAjusteRow, piezasDe = piezasDeRows;
 
   const byDesigner = {};
   todayRows.forEach(r => { (byDesigner[r[1]] = byDesigner[r[1]] || []).push(r); });
@@ -2727,22 +2739,33 @@ async function generatePersonalSummary() {
   const refreshBtn = document.getElementById('btn-resumen-refresh');
   btn.disabled = true;
   if (refreshBtn) refreshBtn.disabled = true;
+  showToast('📝 Generando tu resumen…');
+  let text;
   try {
-    const text = buildPersonalSummaryText();
-    const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
-    openResumenModal('MI RESUMEN', `Resumen de ${selDesigner}`, fecha, text);
-    const status = document.getElementById('resumen-status');
-    status.textContent = 'Guardando en el Sheet…';
-    try {
-      await ensureResumenSheet();
-      await sheetsAppend([[new Date().toLocaleString('es-PA'), `Personal - ${selDesigner}`, text]], 'Resumen');
-      status.textContent = '✓ Guardado en la pestaña "Resumen" del Sheet';
-      status.className = 'resumen-status ok';
-    } catch(e) {
-      status.textContent = 'No se pudo guardar en el Sheet (el resumen sigue disponible aquí para copiar)';
-      status.className = 'resumen-status error';
-      console.error(e);
-    }
+    // Se lee directo del Sheet (no de la memoria del navegador) para que
+    // refleje cualquier corrección que se haya hecho ahí manualmente.
+    const monthRows = await fetchMonthSheetRows();
+    text = buildPersonalSummaryText(monthRows);
+  } catch(e) {
+    showToast('No se pudo leer el Sheet para generar tu resumen — revisa tu conexión', 'error');
+    console.error(e);
+    btn.disabled = false;
+    if (refreshBtn) refreshBtn.disabled = false;
+    return;
+  }
+  const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
+  openResumenModal('MI RESUMEN', `Resumen de ${selDesigner}`, fecha, text);
+  const status = document.getElementById('resumen-status');
+  status.textContent = 'Guardando en el Sheet…';
+  try {
+    await ensureResumenSheet();
+    await sheetsAppend([[new Date().toLocaleString('es-PA'), `Personal - ${selDesigner}`, text]], 'Resumen');
+    status.textContent = '✓ Guardado en la pestaña "Resumen" del Sheet';
+    status.className = 'resumen-status ok';
+  } catch(e) {
+    status.textContent = 'No se pudo guardar en el Sheet (el resumen sigue disponible aquí para copiar)';
+    status.className = 'resumen-status error';
+    console.error(e);
   } finally {
     btn.disabled = false;
     if (refreshBtn) refreshBtn.disabled = false;
