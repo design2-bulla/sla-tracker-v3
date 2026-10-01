@@ -83,10 +83,10 @@
   .ajuste-toggle input { display: none; }
   .toggle-track { width: 40px; height: 22px; background: #d0b0e0; border-radius: 11px; transition: background 0.2s; position: relative; flex-shrink: 0; border: 1px solid #9b3bb5; }
   .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #750a8b; border-radius: 50%; transition: all 0.2s; }
-  .ajuste-toggle input:checked ~ .toggle-track { background: #3DBFB0; border: 1px solid #2da898; }
+  .ajuste-toggle input:checked ~ .toggle-track { background: var(--toggle-on, #750a8b); border: 1px solid var(--toggle-on, #5c0870); }
   .ajuste-toggle input:checked ~ .toggle-track .toggle-thumb { transform: translateX(17px); background: #ffffff; }
   .ajuste-label { font-size: 13px; font-weight: 600; color: var(--label-color); transition: color 0.2s; }
-  .ajuste-toggle input:checked ~ .ajuste-label { color: #3DBFB0; }
+  .ajuste-toggle input:checked ~ .ajuste-label { color: var(--toggle-on, #750a8b); }
   .badge-ajuste { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 4px; background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); letter-spacing: 1px; text-transform: uppercase; }
   .badge-ajuste-round { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 4px; background: rgba(61,191,176,0.15); color: #2da898; border: 1px solid rgba(61,191,176,0.35); letter-spacing: 0.5px; text-transform: uppercase; margin-left: 4px; }
   .badge-ajuste-round.fuera-contrato { background: rgba(192,57,43,0.15); color: #c0392b; border-color: rgba(192,57,43,0.4); font-weight: 700; }
@@ -160,8 +160,13 @@
   .manual-toggle-btn:not(.active):hover { border-color:#750a8b;color:#750a8b; }
   @keyframes shake-block { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
 
+  /* FRANJA DE PRODUCTIVIDAD — encierra Resumen del día + Objetivo diario */
+  .productividad-strip { background:var(--form-bg);border:2px solid rgba(245,124,32,0.35);border-radius:14px;padding:14px 20px;margin-bottom:22px; }
+  .productividad-label { font-family:'Syne',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;color:#F57C20;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px; }
+  .productividad-body { display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:space-between; }
+
   /* RESUMEN DEL DÍA */
-  .resumen-bar { display:flex;flex-direction:column;gap:6px;background:var(--form-bg);border:1px solid rgba(117,10,139,0.3);border-radius:12px;padding:8px 14px 10px; }
+  .resumen-bar { display:flex;flex-direction:column;gap:8px; }
   .resumen-bar-label { font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--label-color);text-transform:uppercase; }
   .resumen-buttons { display:flex;gap:10px;flex-wrap:wrap;margin:14px 0; }
   .resumen-btn { background:var(--form-bg);border:2px solid rgba(117,10,139,0.3);color:var(--label-color);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px; }
@@ -175,10 +180,16 @@
 
   /* NO DISEÑO PANEL */
   .nodesign-card { background: var(--form-bg); border: 2px dashed rgba(117,10,139,0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 22px; }
-  .nodesign-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .nodesign-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; cursor: pointer; user-select: none; }
+  .nodesign-card.collapsed .nodesign-header { margin-bottom: 0; }
   .nodesign-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--label-color); }
+  .nodesign-chevron { font-size: 15px; font-weight: 800; color: #fff; background: #750a8b; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; transition: transform 0.2s, background 0.15s; margin-right: 8px; flex-shrink: 0; }
+  .nodesign-header:hover .nodesign-chevron { background: #9B27AF; }
+  .nodesign-card.collapsed .nodesign-chevron { transform: rotate(-90deg); }
   .nodesign-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: #9b6aaa; }
   [data-theme="dark"] .nodesign-sub { color: var(--muted); }
+  .nodesign-body { overflow: hidden; }
+  .nodesign-card.collapsed .nodesign-body { display: none; }
   .nodesign-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media(max-width:600px){ .nodesign-buttons { grid-template-columns: 1fr; } }
   .nodesign-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 16px; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; font-family: 'Syne', sans-serif; }
@@ -548,10 +559,10 @@
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
             <label style="font-size:10px;font-family:'DM Mono',monospace;color:#3DBFB0;letter-spacing:1.5px;text-transform:uppercase;font-weight:700">¿Ajuste Emplifi?</label>
             <div style="display:flex;align-items:center;gap:8px">
-              <label class="ajuste-toggle" id="emplifi-toggle-wrap">
+              <label class="ajuste-toggle" id="emplifi-toggle-wrap" style="--toggle-on:#3DBFB0">
                 <input type="checkbox" id="is-emplifi">
-                <span class="toggle-track" style="--toggle-on:#3DBFB0"><span class="toggle-thumb"></span></span>
-                <span class="ajuste-label" style="color:#3DBFB0" id="emplifi-label">No</span>
+                <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                <span class="ajuste-label" id="emplifi-label">Es de Emplifi</span>
               </label>
             </div>
           </div>
@@ -583,26 +594,28 @@
     </div>
 
     <!-- NO DISEÑO — Reuniones y Revisiones (botón aparte) -->
-    <div class="nodesign-card">
-      <div class="nodesign-header">
-        <span class="nodesign-title">⏱️ Tareas No Diseño</span>
+    <div class="nodesign-card" id="nodesign-card">
+      <div class="nodesign-header" onclick="toggleNodesignCard()">
+        <span style="display:flex;align-items:center;"><span class="nodesign-chevron" id="nodesign-chevron">▾</span><span class="nodesign-title">⏱️ Tareas No Diseño</span></span>
         <span class="nodesign-sub">No cuentan para el objetivo de 10 artes diarios</span>
       </div>
-      <div class="nodesign-buttons">
-        <div class="nodesign-btn nodesign-btn-meet nodesign-meet-card">
-          <span class="nodesign-btn-main">📅 Reunión / Meet</span>
-          <input type="text" id="meet-subject" class="nodesign-meet-input" placeholder="Asunto (ej: Novey, Cliente X, Interno)..." maxlength="80" onkeydown="if(event.key==='Enter'){event.preventDefault();startQuickTask('meet');}">
-          <button type="button" class="nodesign-meet-start" onclick="startQuickTask('meet')">▶ Iniciar</button>
-          <span class="nodesign-sla">SLA: 60 min</span>
+      <div class="nodesign-body" id="nodesign-body">
+        <div class="nodesign-buttons">
+          <div class="nodesign-btn nodesign-btn-meet nodesign-meet-card">
+            <span class="nodesign-btn-main">📅 Reunión / Meet</span>
+            <input type="text" id="meet-subject" class="nodesign-meet-input" placeholder="Asunto (ej: Novey, Cliente X, Interno)..." maxlength="80" onkeydown="if(event.key==='Enter'){event.preventDefault();startQuickTask('meet');}">
+            <button type="button" class="nodesign-meet-start" onclick="startQuickTask('meet')">▶ Iniciar</button>
+            <span class="nodesign-sla">SLA: 60 min</span>
+          </div>
+          <button class="nodesign-btn nodesign-btn-emplifi" id="btn-emplifi-review" onclick="startQuickTask('emplifi')">
+            <span class="nodesign-btn-main">🔄 Revisión Emplifi</span>
+            <span class="nodesign-sla" id="emplifi-review-counter">SLA: 30 min · 3 disponibles hoy (8:00am, 11:30am, 2:00pm)</span>
+          </button>
+          <button class="nodesign-btn nodesign-btn-grillas" onclick="startQuickTask('grillas')">
+            <span class="nodesign-btn-main">📐 Revisión de Grillas</span>
+            <span class="nodesign-sla">SLA: 30 min</span>
+          </button>
         </div>
-        <button class="nodesign-btn nodesign-btn-emplifi" id="btn-emplifi-review" onclick="startQuickTask('emplifi')">
-          <span class="nodesign-btn-main">🔄 Revisión Emplifi</span>
-          <span class="nodesign-sla" id="emplifi-review-counter">SLA: 30 min · 3 disponibles hoy (8:00am, 11:30am, 2:00pm)</span>
-        </button>
-        <button class="nodesign-btn nodesign-btn-grillas" onclick="startQuickTask('grillas')">
-          <span class="nodesign-btn-main">📐 Revisión de Grillas</span>
-          <span class="nodesign-sla">SLA: 30 min</span>
-        </button>
       </div>
     </div>
 
@@ -682,12 +695,10 @@
 
     <div id="active-timers-container"></div>
 
-    <div class="tasks-header">
-      <div>
-        <div class="section-label">REGISTRO DEL DÍA</div>
-        <div class="task-count" id="task-count">0 tareas registradas</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <!-- FRANJA DE PRODUCTIVIDAD — Resumen del día + Objetivo diario, todo en una sola franja -->
+    <div class="productividad-strip">
+      <div class="productividad-label">📈 Productividad</div>
+      <div class="productividad-body">
         <div class="resumen-bar">
           <div class="resumen-bar-label">📊 Resumen del día</div>
           <div class="resumen-buttons" style="margin:0;">
@@ -696,7 +707,7 @@
           </div>
         </div>
         <!-- OBJETIVO DIARIO -->
-        <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;">
+        <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;flex:1;max-width:340px;">
           <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:4px;">🎯 Objetivo diario</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:6px;overflow:hidden;">
@@ -707,6 +718,13 @@
           <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px;">10 artes pendientes</div>
           <div id="novey-goal-note" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.95);margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.25);">🏠 Novey nuevos hoy: <strong id="novey-new-count">0</strong></div>
         </div>
+      </div>
+    </div>
+
+    <div class="tasks-header">
+      <div>
+        <div class="section-label">REGISTRO DEL DÍA</div>
+        <div class="task-count" id="task-count">0 tareas registradas</div>
       </div>
     </div>
     <div class="tasks-list" id="tasks-list">
@@ -1232,6 +1250,21 @@ function initTheme() {
 // ── LUNCH WARNING ─────────────────────────────────────────────────
 let lunchDismissed = false;
 
+// Los banners de arriba (almuerzo / Emplifi) son position:fixed, así que no
+// empujan el contenido por sí solos — sin esto, tapan el header (modo oscuro,
+// "Ver Excel", estado de sync) en vez de recorrerlo hacia abajo.
+function updateBannerOffset() {
+  const container = document.querySelector('.container');
+  if (!container) return;
+  const lunchBanner = document.getElementById('lunch-banner');
+  const emplifiBanner = document.getElementById('emplifi-banner');
+  let extra = 0;
+  if (lunchBanner && lunchBanner.classList.contains('show')) extra += lunchBanner.offsetHeight;
+  if (emplifiBanner && emplifiBanner.classList.contains('show')) extra += emplifiBanner.offsetHeight;
+  container.style.paddingTop = extra > 0 ? (32 + extra) + 'px' : '';
+}
+window.addEventListener('resize', () => { if (typeof updateBannerOffset === 'function') updateBannerOffset(); });
+
 function checkLunch() {
   const now = new Date();
   const h = now.getHours();
@@ -1244,11 +1277,13 @@ function checkLunch() {
     banner.classList.remove('show');
     lunchDismissed = false; // reset for tomorrow
   }
+  updateBannerOffset();
 }
 
 function dismissLunch() {
   lunchDismissed = true;
   document.getElementById('lunch-banner').classList.remove('show');
+  updateBannerOffset();
 }
 
 // ── RECORDATORIO REVISIÓN EMPLIFI (3 veces al día: 8:00am, 11:30am, 2:00pm) ──
@@ -1274,7 +1309,7 @@ function checkEmplifiReminder() {
   const banner = document.getElementById('emplifi-banner');
   if (!banner) return;
   const idx = currentEmplifiSlotIndex(new Date());
-  if (idx === -1) { banner.classList.remove('show'); return; }
+  if (idx === -1) { banner.classList.remove('show'); updateBannerOffset(); return; }
 
   const doneToday = getEmplifiCountToday(); // revisiones ya hechas hoy (diseñador seleccionado)
   const alreadyDone = idx < doneToday; // ya se hicieron al menos idx+1 revisiones — vamos al día
@@ -1282,6 +1317,7 @@ function checkEmplifiReminder() {
 
   if (alreadyDone || dismissed) {
     banner.classList.remove('show');
+    updateBannerOffset();
     return;
   }
 
@@ -1292,6 +1328,7 @@ function checkEmplifiReminder() {
   banner.style.top = (lunchBanner && lunchBanner.classList.contains('show')) ? lunchBanner.offsetHeight + 'px' : '0';
   const wasShown = banner.classList.contains('show');
   banner.classList.add('show');
+  updateBannerOffset();
   // Notificación nativa del navegador (si el usuario la permitió) — puede
   // aparecer aunque la pestaña esté en segundo plano, mientras el navegador
   // siga abierto. Solo se dispara la primera vez que aparece este aviso.
@@ -1304,12 +1341,14 @@ function dismissEmplifiReminder() {
   const idx = currentEmplifiSlotIndex(new Date());
   if (idx >= 0) localStorage.setItem(emplifiReminderDismissKey(idx), '1');
   document.getElementById('emplifi-banner').classList.remove('show');
+  updateBannerOffset();
 }
 
 function startEmplifiFromReminder() {
   const idx = currentEmplifiSlotIndex(new Date());
   if (idx >= 0) localStorage.setItem(emplifiReminderDismissKey(idx), '1');
   document.getElementById('emplifi-banner').classList.remove('show');
+  updateBannerOffset();
   startQuickTask('emplifi');
 }
 
@@ -1334,39 +1373,39 @@ checkLunch(); // check immediately on load
 // colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
 
 const NOVEDADES_CONFIG = {
-  id: 'nov-jul-2026-v3',
-  title: '🎉 Novedades de Julio',
-  date: 'Julio 2026 · v2.9.0',
+  id: 'nov-sep-2026-v4',
+  title: '🎉 Novedades de Septiembre',
+  date: 'Septiembre 2026 · v3.0.0',
   items: [
     {
-      icon: '📖', color: '#750a8b',
-      title: 'Nueva pestaña: Manual',
-      desc: 'Guía completa paso a paso de cada función del SLA Tracker — cómo registrar tareas, controlar el timer, Registro Manual, tareas No Diseño, rondas de ajuste Novey, y más. Búscala en la barra junto a "SLA Ref."'
+      icon: '🏠', color: '#F57C20',
+      title: 'El Objetivo diario ahora premia lo nuevo de Novey',
+      desc: 'Cada arte nuevo de Novey vale 1.5x para tu meta del día (los ajustes y las tareas "No Diseño" no cuentan, como antes). Además hay un contador aparte, "Novey nuevos hoy", para ver de un vistazo cuántos artes nuevos de Novey llevas — sin mezclar con ajustes ni otras cuentas.'
+    },
+    {
+      icon: '📝', color: '#750a8b',
+      title: 'Nuevo: Resumen del día',
+      desc: 'Dos botones nuevos en la franja de "Productividad": "Mi resumen del día" (tu propio reporte) y "Resumen de equipo" (el de todos). Arman un texto listo para copiar y pegar, igual al formato que se le manda a Danu, y lo guardan también en una pestaña del Sheet. Se puede volver a generar con el botón "🔄 Actualizar" dentro del resumen.'
+    },
+    {
+      icon: '⏱️', color: '#3DBFB0',
+      title: 'El timer ya no se pierde si algo falla',
+      desc: 'Si el navegador se cierra de golpe o hay un apagón mientras tienes una tarea corriendo, el tiempo sigue contando cuando vuelves a abrir la app — ya no hay que empezar de cero.'
+    },
+    {
+      icon: '🔄', color: '#2da898',
+      title: 'Recordatorio de Revisión Emplifi — 3 veces al día',
+      desc: 'Ahora te avisa en pantalla a las 8:00am, 11:30am y 2:00pm si todavía no has hecho la revisión de ese horario, con un botón para iniciarla ahí mismo.'
     },
     {
       icon: '📅', color: '#9B27AF',
-      title: 'Reunión / Meet — botón aparte',
-      desc: 'Nuevo botón en la sección "No Diseño" para iniciar el timer de una reunión o meet con un solo clic. SLA fijo de 1 hora. Se registra en el Sheet como categoría "No Diseño".'
+      title: 'Reunión / Meet ahora con asunto',
+      desc: 'Antes de iniciar el timer de una reunión puedes escribir de qué se trata (ej: "Novey", "Cliente X", "Interno") para identificarla mejor en el registro.'
     },
     {
-      icon: '🔄', color: '#3DBFB0',
-      title: 'Revisión Emplifi — máximo 2 al día',
-      desc: 'También en "No Diseño". SLA de 30 minutos por revisión. Solo puedes usarlo 2 veces al día — a la tercera vez el botón se bloquea automáticamente.'
-    },
-    {
-      icon: '🧮', color: '#F57C20',
-      title: 'Ahora hasta 3 tareas simultáneas',
-      desc: 'Antes el máximo era 2 tareas activas a la vez. Ahora puedes tener hasta 3 corriendo (activas o en pausa) al mismo tiempo.'
-    },
-    {
-      icon: '⬆️', color: '#F5C842',
-      title: 'Orden de tareas activas corregido',
-      desc: 'La tarea que acabas de iniciar ahora aparece arriba de la lista, no se va hacia abajo. Así siempre ves primero lo más reciente.'
-    },
-    {
-      icon: '🔢', color: '#E35376',
-      title: 'Rondas de ajuste — exclusivo Novey',
-      desc: 'Novey incluye 3 rondas de ajuste por contrato. Al marcar "¿Es ajuste?" o "¿Ajuste Emplifi?" con cliente Novey, ahora debes indicar qué ronda es (1ra, 2da, 3ra o 4ta+). A partir de la 4ta se marca como "⚠️ Fuera de contrato" en la app y en el Sheet.'
+      icon: '🗂️', color: '#E35376',
+      title: 'Tareas No Diseño — ahora desplegable',
+      desc: 'La sección de Reunión/Meet, Revisión Emplifi y Revisión de Grillas se puede colapsar (toca el círculo con la flecha) para dejar más espacio libre arriba, sobre todo para ver el Objetivo diario sin hacer scroll.'
     },
   ]
 };
@@ -1598,8 +1637,28 @@ async function saveConfigToSheet() {
 }
 let accessToken = null, tokenExpiry = 0;
 
+// ── TAREAS NO DISEÑO (tarjeta desplegable) ─────────────────────────
+function toggleNodesignCard() {
+  const card = document.getElementById('nodesign-card');
+  const collapsed = card.classList.toggle('collapsed');
+  document.getElementById('nodesign-chevron').textContent = collapsed ? '▸' : '▾';
+  try { localStorage.setItem('sla_nodesign_collapsed', collapsed ? '1' : '0'); } catch(e) {}
+}
+
+function initNodesignCard() {
+  let collapsed = true; // colapsada por defecto — libera espacio para que el objetivo diario se vea sin hacer scroll
+  try {
+    const stored = localStorage.getItem('sla_nodesign_collapsed');
+    if (stored !== null) collapsed = stored === '1';
+  } catch(e) {}
+  const card = document.getElementById('nodesign-card');
+  card.classList.toggle('collapsed', collapsed);
+  document.getElementById('nodesign-chevron').textContent = collapsed ? '▸' : '▾';
+}
+
 // ── BOOT ─────────────────────────────────────────────────────────
 updateDate(); setInterval(tick, 1000);
+initNodesignCard();
 document.getElementById('btn-sheet-link').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
 lsLoadTasks(); renderAll(); renderSLARef();
 loadConfigFromSheet();
@@ -2260,8 +2319,6 @@ function selectAjusteRound(n) {
 }
 
 document.getElementById('is-emplifi').addEventListener('change', function() {
-  document.getElementById('emplifi-label').textContent = this.checked ? 'Emplifi ✓' : 'No';
-  document.getElementById('emplifi-label').style.color = this.checked ? '#3DBFB0' : '#3DBFB0';
   updateNoveyAjusteRoundVisibility();
 });
 
@@ -2336,7 +2393,6 @@ function startTask() {
   document.getElementById('is-ajuste').checked=false;
   document.getElementById('ajuste-badge').style.display='none';
   document.getElementById('is-emplifi').checked=false;
-  document.getElementById('emplifi-label').textContent='No';
   setQty(1);
   selCategory=''; selTypes=[]; selClient=''; selAjusteRound=null;
   document.querySelectorAll('.cat-pill,.type-pill').forEach(p=>p.classList.remove('active'));
@@ -2593,7 +2649,6 @@ function confirmManualEntry() {
   document.getElementById('is-ajuste').checked=false;
   document.getElementById('ajuste-badge').style.display='none';
   document.getElementById('is-emplifi').checked=false;
-  document.getElementById('emplifi-label').textContent='No';
   setQty(1);
   selCategory=''; selTypes=[]; selClient=''; selAjusteRound=null;
   document.querySelectorAll('.cat-pill,.type-pill').forEach(p=>p.classList.remove('active'));
