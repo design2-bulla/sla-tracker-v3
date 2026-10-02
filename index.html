@@ -886,7 +886,7 @@
             <span style="margin-left:auto;color:#fff;font-weight:700;" id="m6-arrow">▸</span>
           </div>
           <div id="m6" style="display:none;padding:14px 16px;background:#fff8f0;">
-            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes nuevos diarios</strong>. Solo cuentan artes nuevos — los ajustes y las tareas de "No Diseño" (Reunión, Emplifi, Grillas) no suman. Cada arte nuevo de Novey vale <strong>1.5</strong> en vez de 1, por ser la cuenta principal de la casa; además hay un contador aparte "🏠 Novey nuevos hoy" que muestra ese número sin mezclar. La barra se pone verde con un mensaje de felicitación al llegar a 10.</p>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes nuevos diarios</strong>. Solo cuentan artes nuevos — los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas de "No Diseño" (Reunión, Emplifi, Grillas) no suman. Cada arte nuevo cuenta igual (1), sin importar el cliente; además hay un contador aparte "🏠 Novey nuevos hoy" que muestra cuántos de esos artes nuevos son de Novey, sin mezclar con ajustes ni otras cuentas. La barra se pone verde con un mensaje de felicitación al llegar a 10.</p>
           </div>
         </div>
 
@@ -1373,14 +1373,14 @@ checkLunch(); // check immediately on load
 // colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
 
 const NOVEDADES_CONFIG = {
-  id: 'nov-sep-2026-v4',
+  id: 'nov-sep-2026-v5',
   title: '🎉 Novedades de Septiembre',
   date: 'Septiembre 2026 · v3.0.0',
   items: [
     {
       icon: '🏠', color: '#F57C20',
-      title: 'El Objetivo diario ahora premia lo nuevo de Novey',
-      desc: 'Cada arte nuevo de Novey vale 1.5x para tu meta del día (los ajustes y las tareas "No Diseño" no cuentan, como antes). Además hay un contador aparte, "Novey nuevos hoy", para ver de un vistazo cuántos artes nuevos de Novey llevas — sin mezclar con ajustes ni otras cuentas.'
+      title: 'Objetivo diario: ahora sí solo cuenta arte nuevo sin ajustes',
+      desc: 'Cada arte nuevo cuenta igual (1) hacia tu meta del día, sin importar el cliente — los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas "No Diseño" nunca suman. Además hay un contador aparte, "Novey nuevos hoy", para ver de un vistazo cuántos de esos artes nuevos son de Novey — sin mezclar con ajustes ni otras cuentas.'
     },
     {
       icon: '📝', color: '#750a8b',
@@ -1500,14 +1500,15 @@ const EMPLIFI_REMINDER_SLOTS = [
   { h: 11, m: 30, label: 'del mediodía', time: '11:30am' },
   { h: 14, m: 0,  label: 'de la tarde',  time: '2:00pm' }
 ];
-// Meta diaria: cada arte nuevo de Novey pesa más que uno de otra cuenta,
-// porque Novey es la cuenta principal de la casa. Los ajustes y las tareas
-// de "No Diseño" (reunión, Emplifi, grillas) no cuentan para la meta.
+// Meta diaria: cada arte nuevo cuenta igual (1), sin importar el cliente.
+// Los ajustes (incluyendo Ajuste Emplifi) y las tareas de "No Diseño"
+// (reunión, Emplifi, grillas) no cuentan para la meta.
 const DAILY_GOAL = 10;
-const NOVEY_GOAL_WEIGHT = 1.5;
 function taskGoalWeight(t) {
-  if (t.category === 'No Diseño' || t.isAjuste) return 0;
-  return t.client === 'Novey' ? NOVEY_GOAL_WEIGHT : 1;
+  // isEmplifi ("¿Ajuste Emplifi?") es también un tipo de ajuste — igual que
+  // isAjuste, no debe contar como arte nuevo para la meta diaria.
+  if (t.category === 'No Diseño' || t.isAjuste || t.isEmplifi) return 0;
+  return 1;
 }
 const SERVICE_ACCOUNT = {
   "type":"service_account",
@@ -1852,25 +1853,106 @@ async function getLastRowIndex(sheetName, token) {
   return -1; // hoja vacía
 }
 
+// ── LOCK DISTRIBUIDO (pestaña "Lock") ───────────────────────────────
+// sheetsAppend() hace "leer la última fila → escribir en la siguiente", en
+// dos pasos separados. Si dos guardados ocurren casi al mismo tiempo (dos
+// diseñadores completando tareas a la vez, o dos timers del mismo diseñador
+// terminando juntos), ambos pueden leer la MISMA última fila y luego
+// escribir sobre la MISMA fila siguiente — el segundo PUT pisa al primero
+// y esa tarea desaparece del Sheet sin ningún error visible. Este lock usa
+// la pestaña "Lock" (ya existía, pero no se usaba) como mutex simple para
+// que solo un guardado a la vez pueda estar entre el "leer" y el "escribir".
+function randomLockToken() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+async function acquireSheetLock(token, maxWaitMs = 8000) {
+  const myToken = randomLockToken();
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    let heldToken = '', heldAt = 0;
+    try {
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Lock!A1:B1`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      const row = (data.values || [])[0] || [];
+      heldToken = row[0] || '';
+      heldAt = parseInt(row[1], 10) || 0;
+    } catch(e) { return null; } // si el Sheet no responde, seguimos sin lock en vez de bloquear el guardado
+
+    const isStale = heldToken && (Date.now() - heldAt > 15000); // lock abandonado (pestaña cerrada a medio guardar)
+    if (!heldToken || isStale) {
+      try {
+        await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Lock!A1:B1?valueInputOption=USER_ENTERED`,
+          { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+            body: JSON.stringify({ values: [[myToken, String(Date.now())]] }) }
+        );
+      } catch(e) { return null; }
+      // Margen para que, si otro cliente reclamó el lock casi al mismo tiempo,
+      // su escritura también se asiente antes de releer quién quedó.
+      await new Promise(r => setTimeout(r, 150 + Math.random() * 200));
+      try {
+        const confirmRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Lock!A1:B1`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const confirmData = await confirmRes.json();
+        const confirmToken = ((confirmData.values || [])[0] || [])[0];
+        if (confirmToken === myToken) return myToken; // ganamos el lock
+      } catch(e) { return null; }
+      // perdimos contra otro cliente que reclamó al mismo tiempo — reintentar
+    }
+    await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+  }
+  return null; // no se pudo conseguir el lock a tiempo — mejor guardar sin lock que no guardar
+}
+
+async function releaseSheetLock(token, myToken) {
+  if (!myToken) return;
+  try {
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Lock!A1:B1`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await res.json();
+    const current = ((data.values || [])[0] || [])[0];
+    if (current === myToken) {
+      await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Lock!A1:B1?valueInputOption=USER_ENTERED`,
+        { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+          body: JSON.stringify({ values: [['', '']] }) }
+      );
+    }
+  } catch(e) { /* liberar es best-effort — el timeout de 15s cubre el caso de que falle */ }
+}
+
 async function sheetsAppend(values, sheetName) {
   const token = await getAccessToken();
   sheetName = sheetName || currentSheet();
 
-  // Calculamos la fila EXACTA donde escribir, en vez de dejar que Sheets
-  // "adivine" el final de la tabla (values:append puede insertar en medio
-  // del documento si detecta un hueco antes del verdadero final).
-  const lastIdx = await getLastRowIndex(sheetName, token);
-  const startRow = lastIdx + 2; // 1-based, siguiente fila disponible
-  const numCols = Math.max(...values.map(r => r.length), 1);
-  const endRow = startRow + values.length - 1;
-  const range = `${sheetName}!A${startRow}:${columnLetter(numCols)}${endRow}`;
+  const myLockToken = await acquireSheetLock(token);
+  try {
+    // Calculamos la fila EXACTA donde escribir, en vez de dejar que Sheets
+    // "adivine" el final de la tabla (values:append puede insertar en medio
+    // del documento si detecta un hueco antes del verdadero final).
+    const lastIdx = await getLastRowIndex(sheetName, token);
+    const startRow = lastIdx + 2; // 1-based, siguiente fila disponible
+    const numCols = Math.max(...values.map(r => r.length), 1);
+    const endRow = startRow + values.length - 1;
+    const range = `${sheetName}!A${startRow}:${columnLetter(numCols)}${endRow}`;
 
-  const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
-    { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
-      body: JSON.stringify({ values }) }
-  );
-  if (!res.ok) throw new Error(await res.text());
+    const res = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+      { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+        body: JSON.stringify({ values }) }
+    );
+    if (!res.ok) throw new Error(await res.text());
+  } finally {
+    await releaseSheetLock(token, myLockToken);
+  }
 }
 
 async function ensureSheetHeaders() {
@@ -2696,8 +2778,8 @@ function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 // corrige un dato directamente en el Sheet, los dos resúmenes lo reflejan.
 // Columnas: 0 Fecha, 1 Diseñador, 2 Tarea, 3 Cliente, 4 Categoría, 5 Tipo,
 // 6 Cant. Piezas, 7 Ajuste, ...
-const isNewRow = r => r[4] !== 'No Diseño' && r[7] !== 'Sí';
-const isAjusteRow = r => r[7] === 'Sí';
+const isNewRow = r => r[4] !== 'No Diseño' && r[7] !== 'Sí' && r[9] !== 'Sí';
+const isAjusteRow = r => r[7] === 'Sí' || r[9] === 'Sí';
 const piezasDeRows = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + (parseInt(r[6],10) || 1), 0);
 
 // monthRows: todas las filas de tarea de la pestaña del mes actual, leídas
@@ -3057,11 +3139,11 @@ function renderTasks() {
   document.getElementById('ajuste-count').textContent=tasks.filter(t=>t.isAjuste).length;
   document.getElementById('emplifi-count').textContent=tasks.filter(t=>t.isEmplifi).length;
 
-  // Daily goal update — los artes nuevos de Novey pesan más (NOVEY_GOAL_WEIGHT);
-  // ajustes y tareas "No Diseño" no cuentan (ver taskGoalWeight()).
+  // Daily goal update — todo arte nuevo cuenta igual (1); ajustes y tareas
+  // "No Diseño" no cuentan (ver taskGoalWeight()).
   const doneTasksToday = tasks.filter(t=>t.status==='Completada');
   const weightedToday = doneTasksToday.reduce((sum,t)=>sum+taskGoalWeight(t), 0);
-  const noveyNewToday = doneTasksToday.filter(t=>t.client==='Novey' && !t.isAjuste && t.category!=='No Diseño').length;
+  const noveyNewToday = doneTasksToday.filter(t=>t.client==='Novey' && !t.isAjuste && !t.isEmplifi && t.category!=='No Diseño').length;
   const fmtGoalNum = n => Number.isInteger(n) ? n : n.toFixed(1);
   const pctGoal = Math.min(Math.round((weightedToday/DAILY_GOAL)*100), 100);
   const remaining = Math.max(DAILY_GOAL - weightedToday, 0);
