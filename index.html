@@ -886,7 +886,7 @@
             <span style="margin-left:auto;color:#fff;font-weight:700;" id="m6-arrow">▸</span>
           </div>
           <div id="m6" style="display:none;padding:14px 16px;background:#fff8f0;">
-            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes nuevos diarios</strong>. Solo cuentan artes nuevos — los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas de "No Diseño" (Reunión, Emplifi, Grillas) no suman. Cada arte nuevo cuenta igual (1), sin importar el cliente; además hay un contador aparte "🏠 Novey nuevos hoy" que muestra cuántos de esos artes nuevos son de Novey, sin mezclar con ajustes ni otras cuentas. La barra se pone verde con un mensaje de felicitación al llegar a 10.</p>
+            <p style="font-family:'DM Mono',monospace;font-size:11px;color:#444;line-height:1.8;">Widget en el "Registro del día" que muestra tu progreso hacia la meta de <strong>10 artes nuevos diarios</strong>. Solo cuentan artes nuevos — los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas de "No Diseño" (Reunión, Emplifi, Grillas) no suman. Cuenta por <strong>pieza</strong>, no por tarea: si registras 3 historias en una sola tarea, suman 3; la <strong>excepción es el Carrusel</strong>, que siempre cuenta como 1 sola pieza sin importar cuántos slides tenga. Cada pieza cuenta igual (1), sin importar el cliente; además hay un contador aparte "🏠 Novey nuevos hoy" que muestra cuántas de esas piezas son de Novey, sin mezclar con ajustes ni otras cuentas. La barra se pone verde con un mensaje de felicitación al llegar a 10.</p>
           </div>
         </div>
 
@@ -1373,14 +1373,14 @@ checkLunch(); // check immediately on load
 // colors disponibles: #E35376 (rosa), #3DBFB0 (teal), #F5C842 (amarillo), #9B27AF (morado), #F57C20 (naranja)
 
 const NOVEDADES_CONFIG = {
-  id: 'nov-sep-2026-v5',
+  id: 'nov-sep-2026-v6',
   title: '🎉 Novedades de Septiembre',
   date: 'Septiembre 2026 · v3.0.0',
   items: [
     {
       icon: '🏠', color: '#F57C20',
-      title: 'Objetivo diario: ahora sí solo cuenta arte nuevo sin ajustes',
-      desc: 'Cada arte nuevo cuenta igual (1) hacia tu meta del día, sin importar el cliente — los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas "No Diseño" nunca suman. Además hay un contador aparte, "Novey nuevos hoy", para ver de un vistazo cuántos de esos artes nuevos son de Novey — sin mezclar con ajustes ni otras cuentas.'
+      title: 'Objetivo diario: cuenta por pieza, no por tarea',
+      desc: 'Cada pieza de arte nuevo suma 1 hacia tu meta del día (si una tarea tiene 3 piezas, suman 3), sin importar el cliente — excepto Carrusel, que siempre cuenta como 1 sola pieza sin importar los slides. Los ajustes (incluyendo "¿Ajuste Emplifi?") y las tareas "No Diseño" nunca suman. El contador aparte "Novey nuevos hoy" muestra cuántas de esas piezas son de Novey, sin mezclar con ajustes ni otras cuentas. Los resúmenes del día (personal y equipo) también cuentan "Artes nuevos" y "Ajustes" en piezas, igual que "Piezas totales".'
     },
     {
       icon: '📝', color: '#750a8b',
@@ -1500,15 +1500,22 @@ const EMPLIFI_REMINDER_SLOTS = [
   { h: 11, m: 30, label: 'del mediodía', time: '11:30am' },
   { h: 14, m: 0,  label: 'de la tarde',  time: '2:00pm' }
 ];
-// Meta diaria: cada arte nuevo cuenta igual (1), sin importar el cliente.
-// Los ajustes (incluyendo Ajuste Emplifi) y las tareas de "No Diseño"
-// (reunión, Emplifi, grillas) no cuentan para la meta.
+// Un carrusel cuenta como 1 sola pieza/arte sin importar cuántos slides
+// tenga (regla de la agencia) — el resto de los tipos cuentan su cantidad
+// de piezas tal cual (ej: 3 historias = 3 artes).
+function taskPieceCount(t) {
+  const type = t.type || '';
+  return type.includes('Carrusel') ? 1 : (t.qty || 1);
+}
+// Meta diaria: cada pieza de arte nuevo cuenta igual (1), sin importar el
+// cliente. Los ajustes (incluyendo Ajuste Emplifi) y las tareas de
+// "No Diseño" (reunión, Emplifi, grillas) no cuentan para la meta.
 const DAILY_GOAL = 10;
 function taskGoalWeight(t) {
   // isEmplifi ("¿Ajuste Emplifi?") es también un tipo de ajuste — igual que
   // isAjuste, no debe contar como arte nuevo para la meta diaria.
   if (t.category === 'No Diseño' || t.isAjuste || t.isEmplifi) return 0;
-  return 1;
+  return taskPieceCount(t);
 }
 const SERVICE_ACCOUNT = {
   "type":"service_account",
@@ -2780,7 +2787,13 @@ function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 // 6 Cant. Piezas, 7 Ajuste, ...
 const isNewRow = r => r[4] !== 'No Diseño' && r[7] !== 'Sí' && r[9] !== 'Sí';
 const isAjusteRow = r => r[7] === 'Sí' || r[9] === 'Sí';
-const piezasDeRows = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + (parseInt(r[6],10) || 1), 0);
+// Un carrusel cuenta como 1 sola pieza, sin importar la cantidad registrada
+// en la columna "Cant. Piezas" (columna 6, Tipo en columna 5).
+const rowPieceCount = r => (r[5] || '').includes('Carrusel') ? 1 : (parseInt(r[6],10) || 1);
+const piezasDeRows = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r) => s + rowPieceCount(r), 0);
+// Suma piezas (no filas) de las filas que cumplen un predicado — así
+// "Artes nuevos" y "Ajustes" reflejan piezas reales, igual que "Piezas totales".
+const piezasDeRowsQue = (rows, pred) => rows.filter(r => r[4] !== 'No Diseño' && pred(r)).reduce((s,r) => s + rowPieceCount(r), 0);
 
 // monthRows: todas las filas de tarea de la pestaña del mes actual, leídas
 // directo del Sheet (fuente de verdad — refleja cualquier corrección manual).
@@ -2794,8 +2807,8 @@ function buildPersonalSummaryText(monthRows) {
     return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\nTodavía no tienes tareas completadas hoy en el Sheet.`;
   }
 
-  const nuevos = rows.filter(isNewRow).length;
-  const ajustes = rows.filter(isAjusteRow).length;
+  const nuevos = piezasDeRowsQue(rows, isNewRow);
+  const ajustes = piezasDeRowsQue(rows, isAjusteRow);
   const piezas = piezasDeRows(rows);
   const total = rows.length;
   return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Total: ${total} tarea${total!==1?'s':''}*`;
@@ -2810,7 +2823,7 @@ function buildTeamSummaryText(monthRows) {
     return `📊 *Reporte del día — ${fecha}*\n\nTodavía no hay tareas completadas hoy en el Sheet.`;
   }
 
-  const isNew = isNewRow, isAjuste = isAjusteRow, piezasDe = piezasDeRows;
+  const isNew = isNewRow, isAjuste = isAjusteRow, piezasDe = piezasDeRows, piezasDeQue = piezasDeRowsQue;
 
   const byDesigner = {};
   todayRows.forEach(r => { (byDesigner[r[1]] = byDesigner[r[1]] || []).push(r); });
@@ -2818,14 +2831,15 @@ function buildTeamSummaryText(monthRows) {
   let out = `📊 *Reporte del día — ${fecha}*\n`;
   Object.keys(byDesigner).sort().forEach(designer => {
     const rows = byDesigner[designer];
-    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${rows.filter(isNew).length}\n🔧 Ajustes: ${rows.filter(isAjuste).length}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Total: ${rows.length} tarea${rows.length!==1?'s':''}*\n`;
+    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${piezasDeQue(rows, isNew)}\n🔧 Ajustes: ${piezasDeQue(rows, isAjuste)}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Total: ${rows.length} tarea${rows.length!==1?'s':''}*\n`;
   });
 
   const noveyToday = todayRows.filter(r => r[3] === 'Novey');
   // Acumulado del mes: solo artes nuevos de Novey, sin ajustes — misma regla
   // que usa el master oficial contra los 300 entregables/mes del contrato.
-  const noveyNuevosMes = monthRows.filter(r => r[3] === 'Novey' && isNew(r)).length;
-  out += `\n🏠 *NOVEY (cuenta principal)*\n📋 Tareas: ${noveyToday.length}\n🆕 Artes nuevos: ${noveyToday.filter(isNew).length}\n🔧 Ajustes: ${noveyToday.filter(isAjuste).length}\n🎨 Piezas: ${piezasDe(noveyToday)}\n📈 Acumulado del mes (según el Tracker, solo artes nuevos): *${noveyNuevosMes}*\n_(puede no incluir piezas del CM que no pasan por el Tracker — usa el número oficial del master si lo tienes)_\n`;
+  // Se cuenta en piezas (carrusel = 1), no en número de filas.
+  const noveyNuevosMes = piezasDeQue(monthRows.filter(r => r[3] === 'Novey'), isNew);
+  out += `\n🏠 *NOVEY (cuenta principal)*\n📋 Tareas: ${noveyToday.length}\n🆕 Artes nuevos: ${piezasDeQue(noveyToday, isNew)}\n🔧 Ajustes: ${piezasDeQue(noveyToday, isAjuste)}\n🎨 Piezas: ${piezasDe(noveyToday)}\n📈 Acumulado del mes (según el Tracker, solo artes nuevos): *${noveyNuevosMes}*\n_(puede no incluir piezas del CM que no pasan por el Tracker — usa el número oficial del master si lo tienes)_\n`;
 
   const otras = [...new Set(todayRows.filter(r => r[3] && r[3] !== 'Novey' && r[3] !== '—').map(r => r[3]))];
   if (otras.length) out += `\n📌 *Otras cuentas trabajadas hoy:*\n` + otras.map(c => `• ${c}`).join('\n') + '\n';
@@ -3139,11 +3153,12 @@ function renderTasks() {
   document.getElementById('ajuste-count').textContent=tasks.filter(t=>t.isAjuste).length;
   document.getElementById('emplifi-count').textContent=tasks.filter(t=>t.isEmplifi).length;
 
-  // Daily goal update — todo arte nuevo cuenta igual (1); ajustes y tareas
-  // "No Diseño" no cuentan (ver taskGoalWeight()).
+  // Daily goal update — cada pieza de arte nuevo cuenta igual (1, o lo que
+  // indique "Cant. Piezas"; carrusel siempre 1); ajustes y tareas
+  // "No Diseño" no cuentan (ver taskGoalWeight()/taskPieceCount()).
   const doneTasksToday = tasks.filter(t=>t.status==='Completada');
   const weightedToday = doneTasksToday.reduce((sum,t)=>sum+taskGoalWeight(t), 0);
-  const noveyNewToday = doneTasksToday.filter(t=>t.client==='Novey' && !t.isAjuste && !t.isEmplifi && t.category!=='No Diseño').length;
+  const noveyNewToday = doneTasksToday.filter(t=>t.client==='Novey' && !t.isAjuste && !t.isEmplifi && t.category!=='No Diseño').reduce((s,t)=>s+taskPieceCount(t), 0);
   const fmtGoalNum = n => Number.isInteger(n) ? n : n.toFixed(1);
   const pctGoal = Math.min(Math.round((weightedToday/DAILY_GOAL)*100), 100);
   const remaining = Math.max(DAILY_GOAL - weightedToday, 0);
