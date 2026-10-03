@@ -160,10 +160,10 @@
   .manual-toggle-btn:not(.active):hover { border-color:#750a8b;color:#750a8b; }
   @keyframes shake-block { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
 
-  /* FRANJA DE PRODUCTIVIDAD — encierra Resumen del día + Objetivo diario */
-  .productividad-strip { background:var(--form-bg);border:2px solid rgba(245,124,32,0.35);border-radius:14px;padding:14px 20px;margin-bottom:22px; }
-  .productividad-label { font-family:'Syne',sans-serif;font-size:12px;font-weight:800;letter-spacing:1px;color:#F57C20;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px; }
-  .productividad-body { display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:space-between; }
+  /* FRANJA DE PRODUCTIVIDAD — anillo de Objetivo diario + Resumen del día, en una sola fila */
+  .productividad-strip { background:var(--form-bg);border:3px solid rgba(245,124,32,0.6);border-radius:14px;padding:14px 20px;margin-bottom:22px;box-shadow:0 4px 16px rgba(245,124,32,0.12); }
+  .productividad-divider { width:1px;align-self:stretch;background:var(--border); }
+  @media (max-width: 680px) { .productividad-divider { display:none; } }
 
   /* RESUMEN DEL DÍA */
   .resumen-bar { display:flex;flex-direction:column;gap:8px; }
@@ -481,6 +481,55 @@
       </div>
     </div>
 
+    <!-- FRANJA DE PRODUCTIVIDAD — anillo de progreso + Objetivo diario + Resumen del día, en una sola fila -->
+    <div class="productividad-strip">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <!-- OBJETIVO DIARIO — anillo de progreso (agrupado para que anillo+texto no se separen al envolver) -->
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="position:relative;width:76px;height:76px;flex-shrink:0;">
+            <svg width="76" height="76" viewBox="0 0 76 76" style="transform:rotate(-90deg);">
+              <circle cx="38" cy="38" r="32" fill="none" stroke="rgba(245,124,32,0.15)" stroke-width="8"/>
+              <circle id="goal-ring" cx="38" cy="38" r="32" fill="none" stroke="#F57C20" stroke-width="8" stroke-linecap="round" stroke-dasharray="201.06" stroke-dashoffset="201.06" style="transition:stroke-dashoffset 0.4s ease, stroke 0.4s ease;"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+              <span id="goal-text" style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#F57C20;transition:color 0.4s ease;">0/10</span>
+            </div>
+          </div>
+          <div style="min-width:130px;">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:#F57C20;text-transform:uppercase;font-weight:700;white-space:nowrap;">🎯 Objetivo diario</div>
+            <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--day-text);margin-top:3px;">10 artes pendientes</div>
+          </div>
+        </div>
+
+        <!-- NOVEY — anillo de progreso (misma escala /10, solo piezas de Novey), también agrupado -->
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="position:relative;width:76px;height:76px;flex-shrink:0;">
+            <svg width="76" height="76" viewBox="0 0 76 76" style="transform:rotate(-90deg);">
+              <circle cx="38" cy="38" r="32" fill="none" stroke="rgba(117,10,139,0.15)" stroke-width="8"/>
+              <circle id="novey-ring" cx="38" cy="38" r="32" fill="none" stroke="#750a8b" stroke-width="8" stroke-linecap="round" stroke-dasharray="201.06" stroke-dashoffset="201.06" style="transition:stroke-dashoffset 0.4s ease, stroke 0.4s ease;"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+              <span id="novey-goal-text" style="font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:#750a8b;transition:color 0.4s ease;">0/10</span>
+            </div>
+          </div>
+          <div style="min-width:130px;">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;color:#750a8b;text-transform:uppercase;font-weight:700;white-space:nowrap;">🏠 Novey nuevos hoy</div>
+            <div id="novey-goal-sub" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--day-text);margin-top:3px;">0 piezas hoy</div>
+          </div>
+        </div>
+
+        <div class="productividad-divider"></div>
+        <!-- RESUMEN DEL DÍA -->
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--label-color);text-transform:uppercase;">📊 Resumen del día</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="resumen-btn" id="btn-resumen-personal" onclick="generatePersonalSummary()" style="padding:6px 12px;font-size:11px;">📝 Mi resumen</button>
+            <button class="resumen-btn" id="btn-resumen-equipo" onclick="generateTeamSummary()" style="padding:6px 12px;font-size:11px;">📊 Equipo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="task-form">
       <div class="section-label">+ NUEVA TAREA</div>
 
@@ -694,32 +743,6 @@
     </div>
 
     <div id="active-timers-container"></div>
-
-    <!-- FRANJA DE PRODUCTIVIDAD — Resumen del día + Objetivo diario, todo en una sola franja -->
-    <div class="productividad-strip">
-      <div class="productividad-label">📈 Productividad</div>
-      <div class="productividad-body">
-        <div class="resumen-bar">
-          <div class="resumen-bar-label">📊 Resumen del día</div>
-          <div class="resumen-buttons" style="margin:0;">
-            <button class="resumen-btn" id="btn-resumen-personal" onclick="generatePersonalSummary()">📝 Mi resumen del día</button>
-            <button class="resumen-btn" id="btn-resumen-equipo" onclick="generateTeamSummary()">📊 Resumen de equipo</button>
-          </div>
-        </div>
-        <!-- OBJETIVO DIARIO -->
-        <div id="daily-goal-widget" style="background:linear-gradient(135deg,#F57C20,#F5C842);border-radius:12px;padding:10px 16px;min-width:180px;flex:1;max-width:340px;">
-          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:4px;">🎯 Objetivo diario</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:6px;overflow:hidden;">
-              <div id="goal-bar" style="height:100%;background:#fff;border-radius:6px;transition:width 0.4s ease;width:0%"></div>
-            </div>
-            <span id="goal-text" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:#fff;white-space:nowrap;">0 / 10</span>
-          </div>
-          <div id="goal-sub" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.75);margin-top:3px;">10 artes pendientes</div>
-          <div id="novey-goal-note" style="font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,0.95);margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.25);">🏠 Novey nuevos hoy: <strong id="novey-new-count">0</strong></div>
-        </div>
-      </div>
-    </div>
 
     <div class="tasks-header">
       <div>
@@ -2178,7 +2201,10 @@ async function syncTaskToSheet(task) {
       task.category || '—',
       task.type,
       task.qty || 1,
-      task.isAjuste ? 'Sí' : 'No',
+      // Un Ajuste Emplifi también es un ajuste — la columna "Ajuste" debe
+      // marcar "Sí" en ambos casos, para que se vea correcto aunque solo
+      // se mire esta columna sin fijarse en la de Emplifi.
+      (task.isAjuste || task.isEmplifi) ? 'Sí' : 'No',
       ajusteRoundLabel,
       task.isEmplifi ? 'Sí' : 'No',
       new Date(task.startTime).toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
@@ -3162,16 +3188,40 @@ function renderTasks() {
   const fmtGoalNum = n => Number.isInteger(n) ? n : n.toFixed(1);
   const pctGoal = Math.min(Math.round((weightedToday/DAILY_GOAL)*100), 100);
   const remaining = Math.max(DAILY_GOAL - weightedToday, 0);
-  document.getElementById('goal-bar').style.width = pctGoal + '%';
-  document.getElementById('goal-text').textContent = `${fmtGoalNum(weightedToday)} / ${DAILY_GOAL}`;
-  document.getElementById('novey-new-count').textContent = noveyNewToday;
+  // Anillo de progreso — circunferencia de un círculo r=32 (ver <svg> del widget).
+  const goalRing = document.getElementById('goal-ring');
+  const GOAL_RING_CIRCUMFERENCE = 2 * Math.PI * 32;
+  goalRing.style.strokeDashoffset = (GOAL_RING_CIRCUMFERENCE * (1 - pctGoal/100)).toFixed(2);
+  document.getElementById('goal-text').textContent = `${fmtGoalNum(weightedToday)}/${DAILY_GOAL}`;
   const goalSub = document.getElementById('goal-sub');
+  const goalText = document.getElementById('goal-text');
   if (weightedToday >= DAILY_GOAL) {
     goalSub.textContent = '🎉 ¡Meta del día cumplida!';
-    document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#2da898,#3DBFB0)';
+    goalRing.style.stroke = '#3DBFB0';
+    goalText.style.color = '#2da898';
   } else {
     goalSub.textContent = `${fmtGoalNum(remaining)} arte${remaining!==1?'s':''} pendiente${remaining!==1?'s':''}`;
-    document.getElementById('daily-goal-widget').style.background = 'linear-gradient(135deg,#F57C20,#F5C842)';
+    goalRing.style.stroke = '#F57C20';
+    goalText.style.color = '#F57C20';
+  }
+
+  // Anillo de Novey — misma escala /10 que el objetivo general, pero solo
+  // contando piezas nuevas de Novey, para comparar de un vistazo cuánto del
+  // objetivo del día viene de la cuenta principal.
+  const noveyPctGoal = Math.min(Math.round((noveyNewToday/DAILY_GOAL)*100), 100);
+  const noveyRing = document.getElementById('novey-ring');
+  const noveyGoalText = document.getElementById('novey-goal-text');
+  const noveyGoalSub = document.getElementById('novey-goal-sub');
+  noveyRing.style.strokeDashoffset = (GOAL_RING_CIRCUMFERENCE * (1 - noveyPctGoal/100)).toFixed(2);
+  noveyGoalText.textContent = `${fmtGoalNum(noveyNewToday)}/${DAILY_GOAL}`;
+  if (noveyNewToday >= DAILY_GOAL) {
+    noveyGoalSub.textContent = '🎉 ¡Meta cumplida!';
+    noveyRing.style.stroke = '#3DBFB0';
+    noveyGoalText.style.color = '#2da898';
+  } else {
+    noveyGoalSub.textContent = `${fmtGoalNum(noveyNewToday)} pieza${noveyNewToday!==1?'s':''} hoy`;
+    noveyRing.style.stroke = '#750a8b';
+    noveyGoalText.style.color = '#750a8b';
   }
 }
 
