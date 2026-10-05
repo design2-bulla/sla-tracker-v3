@@ -206,6 +206,8 @@
   .nodesign-btn-emplifi:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(61,191,176,0.35); }
   .nodesign-btn-grillas { background: linear-gradient(135deg,#F57C20,#E35376); }
   .nodesign-btn-grillas:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(227,83,118,0.35); }
+  .nodesign-btn-atp { background: linear-gradient(135deg,#9B27AF,#E35376); }
+  .nodesign-btn-atp:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(155,39,175,0.35); }
   .nodesign-btn:disabled { background: linear-gradient(135deg,#999,#777) !important; cursor: not-allowed; transform: none !important; box-shadow: none !important; opacity: 0.6; }
   .badge-nodesign { display:inline-block; font-family:'DM Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.5px; background:rgba(155,39,175,0.25); color:#C063A8; border:1px solid rgba(155,39,175,0.5); padding:2px 8px; border-radius:20px; margin-left:8px; vertical-align:middle; }
   .active-timer.nodesign-timer { border-color: rgba(155,39,175,0.5) !important; }
@@ -664,6 +666,10 @@
             <span class="nodesign-btn-main">📐 Revisión de Grillas</span>
             <span class="nodesign-sla">SLA: 30 min</span>
           </button>
+          <button class="nodesign-btn nodesign-btn-atp" onclick="startQuickTask('atp')">
+            <span class="nodesign-btn-main">🔎 Revisión de Grilla con Answer The Public</span>
+            <span class="nodesign-sla">SLA: 30 min</span>
+          </button>
         </div>
       </div>
     </div>
@@ -878,7 +884,8 @@
               <li><strong>📅 Reunión / Meet</strong> — escribe el asunto (ej: "Novey", "Cliente X", "Interno") en el campo de texto y presiona "▶ Iniciar" (o Enter). El asunto es opcional; si lo dejas vacío, se registra solo como "Reunión / Meet". SLA fijo: 60 min.</li>
               <li><strong>🔄 Revisión Emplifi</strong> — SLA de 30 min. Debe hacerse <strong>3 veces al día, a las 8:00am, 11:30am y 2:00pm</strong>; un aviso en pantalla recuerda cuando llega cada horario. Al cuarto intento el botón se bloquea solo.</li>
               <li><strong>📐 Revisión de Grillas</strong> — mismo SLA que Emplifi (30 min), sin límite diario.</li>
-              <li>Las tres se registran en el Sheet con categoría <strong>"No Diseño"</strong>.</li>
+              <li><strong>🔎 Revisión de Grilla con Answer The Public</strong> — SLA de 30 min, sin límite diario.</li>
+              <li>Todas se registran en el Sheet con categoría <strong>"No Diseño"</strong>.</li>
             </ul>
           </div>
         </div>
@@ -1579,6 +1586,7 @@ const SLA_TIMES = {
   'Reunión / Meet': [60, 60],
   'Revisión Emplifi': [30, 30],
   'Revisión de Grillas': [30, 30],
+  'Revisión de Grilla con Answer The Public': [30, 30],
 };
 
 // Tipos donde el SLA se multiplica por cantidad (cada pieza tiene su propio tiempo)
@@ -2337,7 +2345,7 @@ function setQty(n) {
 function renderTypePillsDrop() {
   const container = document.getElementById('type-pills-drop');
   if (!container) return;
-  const NO_DESIGN_TYPES = ['Reunión / Meet', 'Reunión', 'Meet', 'Revisión Emplifi', 'Revisión de Grillas'];
+  const NO_DESIGN_TYPES = ['Reunión / Meet', 'Reunión', 'Meet', 'Revisión Emplifi', 'Revisión de Grillas', 'Revisión de Grilla con Answer The Public'];
   const visibleTypes = types.filter(t => !NO_DESIGN_TYPES.includes(t));
   container.innerHTML = visibleTypes.map(t => {
     const isAnim = t.startsWith('Animación');
@@ -2577,6 +2585,9 @@ function startQuickTask(kind) {
   } else if (kind === 'grillas') {
     name = 'Revisión de Grillas';
     type = 'Revisión de Grillas';
+  } else if (kind === 'atp') {
+    name = 'Revisión de Grilla con Answer The Public';
+    type = 'Revisión de Grilla con Answer The Public';
   } else {
     return;
   }
@@ -2589,7 +2600,7 @@ function startQuickTask(kind) {
 
   if (kind === 'emplifi') incEmplifiCountToday();
   if (kind === 'meet') { const si = document.getElementById('meet-subject'); if (si) si.value = ''; }
-  const startMsg = kind === 'meet' ? `📅 ${name} iniciada` : kind === 'grillas' ? '📐 Revisión de Grillas iniciada' : '🔄 Revisión Emplifi iniciada';
+  const startMsg = kind === 'meet' ? `📅 ${name} iniciada` : kind === 'grillas' ? '📐 Revisión de Grillas iniciada' : kind === 'atp' ? '🔎 Revisión de Grilla con Answer The Public iniciada' : '🔄 Revisión Emplifi iniciada';
   showToast(startMsg);
 }
 let manualMode = true; // true = ya terminé, false = aún en curso
