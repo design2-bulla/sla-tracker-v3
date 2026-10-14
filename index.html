@@ -3009,7 +3009,12 @@ function buildTeamSummaryText(monthRows) {
   Object.keys(byDesigner).sort().forEach(designer => {
     const rows = byDesigner[designer];
     const atpMin = atpMinutesOf(rows);
-    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${piezasDeQue(rows, isNew)}\n🔧 Ajustes: ${piezasDeQue(rows, isAjuste)}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Tareas: ${rows.length}*`;
+    // Entregables Novey por diseñador — resaltado aparte de "Artes nuevos"
+    // (que suma todas las cuentas) para que gerencia vea de un vistazo cuánto
+    // entregó cada uno específicamente en Novey, la cuenta principal.
+    const noveyRowsDesigner = rows.filter(r => r[3] === 'Novey');
+    const entregablesNoveyDesigner = piezasDeQue(noveyRowsDesigner, isNew);
+    out += `\n👤 *${designer}*\n📦 *‼️ ENTREGABLES NOVEY: ${entregablesNoveyDesigner} ‼️*\n🆕 Artes nuevos: ${piezasDeQue(rows, isNew)}\n🔧 Ajustes: ${piezasDeQue(rows, isAjuste)}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Tareas: ${rows.length}*`;
     if (atpMin > 0) out += `\n🔎 Además: Revisión de grilla con Answer The Public (${atpMin} min)`;
     out += '\n';
   });
