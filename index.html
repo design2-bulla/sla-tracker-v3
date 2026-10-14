@@ -692,6 +692,27 @@
       </div>
     </div>
 
+    <!-- COMPLETAR TAREA — confirmar / agregar link de Notion -->
+    <div class="manual-overlay" id="complete-link-overlay" style="display:none;">
+      <div class="manual-modal" style="max-width:420px;">
+        <div class="manual-header" style="background:linear-gradient(135deg,#2da898,#3DBFB0);">
+          <div class="manual-tag">✓ Tarea completada</div>
+          <div class="manual-title" id="complete-link-task-name">—</div>
+          <div class="manual-sub">¿Deseas colocar el link de Notion de esta pieza para su visualización? (opcional)</div>
+        </div>
+        <div class="manual-body">
+          <div class="manual-field">
+            <label>🔗 Link de Notion</label>
+            <input type="url" id="complete-link-input" placeholder="https://www.notion.so/..." inputmode="url">
+          </div>
+        </div>
+        <div class="manual-footer">
+          <button class="manual-btn-cancel" onclick="closeCompleteLinkModal()">Omitir</button>
+          <button class="manual-btn-confirm" style="background:linear-gradient(135deg,#2da898,#3DBFB0);" onclick="confirmCompleteWithLink()">✓ Guardar link</button>
+        </div>
+      </div>
+    </div>
+
     <!-- RESUMEN DEL DÍA MODAL -->
     <div class="manual-overlay" id="resumen-overlay" style="display:none;">
       <div class="resumen-modal">
@@ -1822,7 +1843,7 @@ async function ensureMonthSheet() {
   );
 
   // Add headers to new tab (usa el mismo método robusto que el resto de la app)
-  await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
+  await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo','Link Notion']]);
 
   showToast(`📅 Nueva pestaña creada: ${sheetName}`, 'success');
 }
@@ -1855,7 +1876,7 @@ async function fetchMonthSheetRows() {
   const token = await getAccessToken();
   const sheetName = currentSheet();
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:P20000`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}!A1:Q20000`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   const data = await res.json();
@@ -2024,7 +2045,7 @@ async function ensureSheetHeaders() {
     const rows = data.values || [];
     const headersExist = rows.some(r => r && r.includes('Diseñador'));
     if (!headersExist) {
-      await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']]);
+      await sheetsAppend([['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo','Link Notion']]);
     }
     // NOTE: Day separator is inserted on first task completion, not on app open
 
@@ -2128,9 +2149,9 @@ async function ensureDaySeparator() {
 
     // Insert blank spacer + colored separator row + column headers
     await sheetsAppend([
-      ['','','','','','','','','','','','','','','',''],
-      [todayLabel,'','','','','','','','','','','','','','',''],
-      ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo']
+      ['','','','','','','','','','','','','','','','',''],
+      [todayLabel,'','','','','','','','','','','','','','','',''],
+      ['Fecha','Diseñador','Tarea','Cliente','Categoría','Tipo','Cant. Piezas','Ajuste','N° Ajuste (Novey)','Emplifi','Inicio','Fin','Duración (min)','SLA Ref (min)','% SLA','Semáforo','Link Notion']
     ]);
 
     // Apply rosa #E35376 color to the separator row
@@ -2220,7 +2241,8 @@ async function syncTaskToSheet(task) {
       durMin,
       slaRef || '—',
       pct !== null ? pct : '—',
-      semaforo
+      semaforo,
+      task.notionLink || '—'
     ]]);
     setSyncStatus('synced', '✓ Guardado en Sheets');
     showToast('✓ Tarea guardada en Google Sheets', 'success');
@@ -2751,7 +2773,9 @@ function confirmManualEntry() {
     tasks.push(task);
     lsSaveTasks();
     renderTasks();
-    syncTaskToSheet(task);
+    // Igual que al completar un timer activo: se pregunta el link de Notion
+    // después de registrar la tarea, sin bloquear el registro.
+    promptNotionLinkThenSync(task);
     showToast(`✓ Tarea registrada manualmente (${mins} min)`);
 
   } else {
@@ -2814,6 +2838,43 @@ function confirmCancelYes() {
   closeCancelConfirm();
 }
 
+// ── LINK DE NOTION — se pregunta DESPUÉS de completar la tarea, no antes.
+// La tarea ya queda completada y fuera del timer de inmediato; el popup solo
+// decide qué se manda al Sheet (con o sin link) y no bloquea la finalización.
+// Las tareas "No Diseño" (reuniones, Emplifi, grillas, ATP) no generan una
+// pieza que revisar en Notion, así que esas se sincronizan directo, sin popup.
+let pendingLinkTask = null;
+
+function promptNotionLinkThenSync(task) {
+  pendingLinkTask = task;
+  document.getElementById('complete-link-task-name').textContent = `"${task.name}"`;
+  document.getElementById('complete-link-input').value = '';
+  document.getElementById('complete-link-overlay').style.display = 'flex';
+}
+
+// "Omitir" — la tarea ya está completada; esto solo decide que se guarde
+// en el Sheet sin link.
+function closeCompleteLinkModal() {
+  document.getElementById('complete-link-overlay').style.display = 'none';
+  if (pendingLinkTask) {
+    syncTaskToSheet(pendingLinkTask);
+    pendingLinkTask = null;
+  }
+}
+
+function confirmCompleteWithLink() {
+  if (!pendingLinkTask) return;
+  const link = document.getElementById('complete-link-input').value.trim();
+  // `pendingLinkTask` es el mismo objeto que ya vive en `tasks` (mismo id),
+  // así que esto también actualiza el link visible en la lista en pantalla.
+  pendingLinkTask.notionLink = link;
+  lsSaveTasks();
+  renderTasks();
+  document.getElementById('complete-link-overlay').style.display = 'none';
+  syncTaskToSheet(pendingLinkTask);
+  pendingLinkTask = null;
+}
+
 // ── RESUMEN DEL DÍA (personal y de equipo) ──────────────────────────
 function capFirst(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
@@ -2831,6 +2892,18 @@ const piezasDeRows = rows => rows.filter(r => r[4] !== 'No Diseño').reduce((s,r
 // Suma piezas (no filas) de las filas que cumplen un predicado — así
 // "Artes nuevos" y "Ajustes" reflejan piezas reales, igual que "Piezas totales".
 const piezasDeRowsQue = (rows, pred) => rows.filter(r => r[4] !== 'No Diseño' && pred(r)).reduce((s,r) => s + rowPieceCount(r), 0);
+// Tareas de "Revisión de Grilla con Answer The Public" — Danu pidió verlas
+// desglosadas aparte (minutos vs SLA) desde que se incorporó este paso al
+// flujo de grilla de Novey, porque afecta el ritmo de salida de artes nuevos
+// sin ser en sí mismo un arte nuevo ni un ajuste.
+const isATPRow = r => (r[5] || '').includes('Answer The Public');
+const atpMinutesOf = rows => rows.filter(isATPRow).reduce((s,r) => s + (parseInt(r[12],10) || 0), 0);
+// Arma "a, b y c" para listar los nombres de tarea de una cuenta secundaria.
+function joinConY(names) {
+  if (names.length <= 1) return names.join('');
+  if (names.length === 2) return names.join(' y ');
+  return names.slice(0,-1).join(', ') + ' y ' + names[names.length-1];
+}
 
 // monthRows: todas las filas de tarea de la pestaña del mes actual, leídas
 // directo del Sheet (fuente de verdad — refleja cualquier corrección manual).
@@ -2848,7 +2921,10 @@ function buildPersonalSummaryText(monthRows) {
   const ajustes = piezasDeRowsQue(rows, isAjusteRow);
   const piezas = piezasDeRows(rows);
   const total = rows.length;
-  return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Total: ${total} tarea${total!==1?'s':''}*`;
+  const atpMin = atpMinutesOf(rows);
+  let out = `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Tareas: ${total}*`;
+  if (atpMin > 0) out += `\n🔎 Además: Revisión de grilla con Answer The Public (${atpMin} min)`;
+  return out;
 }
 
 function buildTeamSummaryText(monthRows) {
@@ -2865,21 +2941,41 @@ function buildTeamSummaryText(monthRows) {
   const byDesigner = {};
   todayRows.forEach(r => { (byDesigner[r[1]] = byDesigner[r[1]] || []).push(r); });
 
-  let out = `📊 *Reporte del día — ${fecha}*\n`;
+  const noveyToday = todayRows.filter(r => r[3] === 'Novey');
+  const noveyNuevosHoy = piezasDeQue(noveyToday, isNew);
+
+  // Línea destacada pedida por Danu desde el 8 de octubre: cuántos
+  // entregables (artes nuevos) de Novey salieron hoy, visible arriba del
+  // desglose por diseñador — no solo adentro del bloque NOVEY.
+  let out = `📊 *Reporte del día — ${fecha}*\n\n📦 *Entregables Novey del día (artes nuevos): ${noveyNuevosHoy}*\n`;
+
   Object.keys(byDesigner).sort().forEach(designer => {
     const rows = byDesigner[designer];
-    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${piezasDeQue(rows, isNew)}\n🔧 Ajustes: ${piezasDeQue(rows, isAjuste)}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Total: ${rows.length} tarea${rows.length!==1?'s':''}*\n`;
+    const atpMin = atpMinutesOf(rows);
+    out += `\n👤 *${designer}*\n🆕 Artes nuevos: ${piezasDeQue(rows, isNew)}\n🔧 Ajustes: ${piezasDeQue(rows, isAjuste)}\n🎨 Piezas totales: ${piezasDe(rows)}\n✅ *Tareas: ${rows.length}*`;
+    if (atpMin > 0) out += `\n🔎 Además: Revisión de grilla con Answer The Public (${atpMin} min)`;
+    out += '\n';
   });
 
-  const noveyToday = todayRows.filter(r => r[3] === 'Novey');
-  // Acumulado del mes: solo artes nuevos de Novey, sin ajustes — misma regla
-  // que usa el master oficial contra los 300 entregables/mes del contrato.
-  // Se cuenta en piezas (carrusel = 1), no en número de filas.
-  const noveyNuevosMes = piezasDeQue(monthRows.filter(r => r[3] === 'Novey'), isNew);
-  out += `\n🏠 *NOVEY (cuenta principal)*\n📋 Tareas: ${noveyToday.length}\n🆕 Artes nuevos: ${piezasDeQue(noveyToday, isNew)}\n🔧 Ajustes: ${piezasDeQue(noveyToday, isAjuste)}\n🎨 Piezas: ${piezasDe(noveyToday)}\n📈 Acumulado del mes (según el Tracker, solo artes nuevos): *${noveyNuevosMes}*\n_(puede no incluir piezas del CM que no pasan por el Tracker — usa el número oficial del master si lo tienes)_\n`;
+  // El acumulado mensual del master (incluye lo que aporta el CM, que no
+  // pasa por este Tracker) se deja fuera a propósito: de este lado no se
+  // cuenta igual, así que Joel lo agrega aparte con el cierre oficial.
+  out += `\n🏠 *NOVEY (cuenta principal)*\n📋 Tareas: ${noveyToday.length}\n🆕 Entregables (artes nuevos): ${noveyNuevosHoy} pzs\n🔧 Ajustes incluidos: ${piezasDeQue(noveyToday, isAjuste)} pzs\n🎨 Piezas totales: ${piezasDe(noveyToday)} pzs\n`;
 
   const otras = [...new Set(todayRows.filter(r => r[3] && r[3] !== 'Novey' && r[3] !== '—').map(r => r[3]))];
-  if (otras.length) out += `\n📌 *Otras cuentas trabajadas hoy:*\n` + otras.map(c => `• ${c}`).join('\n') + '\n';
+  if (otras.length) {
+    out += `\n📌 *Otras cuentas trabajadas hoy:*\n` + otras.map(c => {
+      const rowsC = todayRows.filter(r => r[3] === c);
+      const n = piezasDeQue(rowsC, isNew);
+      const a = piezasDeQue(rowsC, isAjuste);
+      const parts = [];
+      if (n) parts.push(`${n} nuevo${n!==1?'s':''}`);
+      if (a) parts.push(`${a} ajuste${a!==1?'s':''}`);
+      const countsStr = parts.length ? parts.join(', ') : `${piezasDe(rowsC)} pieza${piezasDe(rowsC)!==1?'s':''}`;
+      const names = rowsC.map(r => r[2]).filter(Boolean);
+      return `• ${c}: ${countsStr}${names.length ? ': ' + joinConY(names) : ''}`;
+    }).join('\n') + '\n';
+  }
 
   const totalPiezasHoy = piezasDe(todayRows);
   const numDesigners = Object.keys(byDesigner).length;
@@ -3012,7 +3108,11 @@ function stopTask(id, completed) {
     tasks.push(task);
     lsSaveTasks();
     renderTasks();
-    syncTaskToSheet(task);
+    // La tarea ya quedó completada arriba; "No Diseño" se sincroniza directo
+    // (no genera pieza que revisar en Notion), el resto pregunta el link
+    // después, sin bloquear la finalización de la tarea.
+    if (task.category === 'No Diseño') syncTaskToSheet(task);
+    else promptNotionLinkThenSync(task);
   }
   activeTasks.splice(idx, 1);
   saveActiveTasks();
@@ -3164,6 +3264,7 @@ function renderTasks() {
           ${t.ajusteRound?`<span class="badge-ajuste-round${t.ajusteRound>=4?' fuera-contrato':''}">${t.ajusteRound}ª RONDA${t.ajusteRound>=4?' ⚠️':''}</span>`:''}
           ${t.manual?`<span class="tag" style="background:rgba(117,10,139,0.15);color:#9B27AF;border:1px solid rgba(117,10,139,0.3)">📝 Manual</span>`:''}
           ${getSLABadge(t.seconds, t.type, t.qty||1)}
+          ${t.notionLink?`<a href="${esc(t.notionLink)}" target="_blank" rel="noopener" class="tag" style="background:rgba(0,0,0,0.65);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">🔗 Notion</a>`:''}
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px">${esc(t.designer)}</div>
       </div>
