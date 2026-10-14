@@ -696,19 +696,20 @@
     <div class="manual-overlay" id="complete-link-overlay" style="display:none;">
       <div class="manual-modal" style="max-width:420px;">
         <div class="manual-header" style="background:linear-gradient(135deg,#2da898,#3DBFB0);">
-          <div class="manual-tag">✓ Tarea completada</div>
+          <div class="manual-tag">🔗 Falta el link de Notion</div>
           <div class="manual-title" id="complete-link-task-name">—</div>
-          <div class="manual-sub">¿Deseas colocar el link de Notion de esta pieza para su visualización? (opcional)</div>
+          <div class="manual-sub">Para completar esta pieza, pega el link de Notion donde quien revise pueda verla</div>
         </div>
         <div class="manual-body">
           <div class="manual-field">
-            <label>🔗 Link de Notion</label>
+            <label>🔗 Link de Notion (obligatorio)</label>
             <input type="url" id="complete-link-input" placeholder="https://www.notion.so/..." inputmode="url">
+            <div id="complete-link-error" style="display:none;color:#E35376;font-family:'DM Mono',monospace;font-size:11px;margin-top:6px;">⚠️ Pega el link de Notion para poder completar la tarea</div>
           </div>
         </div>
         <div class="manual-footer">
-          <button class="manual-btn-cancel" onclick="closeCompleteLinkModal()">Omitir</button>
-          <button class="manual-btn-confirm" style="background:linear-gradient(135deg,#2da898,#3DBFB0);" onclick="confirmCompleteWithLink()">✓ Guardar link</button>
+          <button class="manual-btn-cancel" onclick="closeCompleteLinkModal()">Cancelar (seguir trabajando)</button>
+          <button class="manual-btn-confirm" style="background:linear-gradient(135deg,#2da898,#3DBFB0);" onclick="confirmCompleteWithLink()">✓ Completar tarea</button>
         </div>
       </div>
     </div>
@@ -2757,7 +2758,7 @@ function confirmManualEntry() {
     const endDate = new Date(now); endDate.setHours(eh, em, 0, 0);
     if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
 
-    const task = {
+    const buildManualTask = (notionLink) => ({
       id: Date.now(),
       name, designer: selDesigner, client: selClient||'—',
       type: selTypes.length?selTypes.join(', '):'—',
@@ -2767,16 +2768,23 @@ function confirmManualEntry() {
       status: 'Completada',
       startTime: startDate.toISOString(),
       endTime: endDate.toISOString(),
-      manual: true
-    };
+      manual: true,
+      notionLink: notionLink || undefined
+    });
 
-    tasks.push(task);
-    lsSaveTasks();
-    renderTasks();
-    // Igual que al completar un timer activo: se pregunta el link de Notion
-    // después de registrar la tarea, sin bloquear el registro.
-    promptNotionLinkThenSync(task);
-    showToast(`✓ Tarea registrada manualmente (${mins} min)`);
+    // "No Diseño" no genera pieza que revisar en Notion: se registra directo.
+    // El resto, igual que al completar un timer activo, exige el link de
+    // Notion antes de quedar registrada (no se guarda hasta confirmarlo).
+    if (selCategory === 'No Diseño') {
+      const task = buildManualTask();
+      tasks.push(task);
+      lsSaveTasks();
+      renderTasks();
+      syncTaskToSheet(task);
+      showToast(`✓ Tarea registrada manualmente (${mins} min)`);
+    } else {
+      requireNotionLink('manual', { build: buildManualTask }, name);
+    }
 
   } else {
     // ── Modo "aún en curso" — inicia el timer en vivo con tiempo ya corrido ──
@@ -2838,41 +2846,81 @@ function confirmCancelYes() {
   closeCancelConfirm();
 }
 
-// ── LINK DE NOTION — se pregunta DESPUÉS de completar la tarea, no antes.
-// La tarea ya queda completada y fuera del timer de inmediato; el popup solo
-// decide qué se manda al Sheet (con o sin link) y no bloquea la finalización.
-// Las tareas "No Diseño" (reuniones, Emplifi, grillas, ATP) no generan una
-// pieza que revisar en Notion, así que esas se sincronizan directo, sin popup.
-let pendingLinkTask = null;
+// ── LINK DE NOTION — OBLIGATORIO para completar una tarea de diseño.
+// Una tarea de diseño no queda "Completada" (no se guarda en `tasks` ni se
+// sincroniza al Sheet) hasta que se pega un link de Notion. Las tareas
+// "No Diseño" (reuniones, Emplifi, grillas, ATP) no generan una pieza que
+// revisar ahí, así que esas se completan directo, sin pasar por este popup.
+// `pendingComplete` guarda qué hacer si se confirma el link:
+//   { kind:'active', id }        → terminar un timer activo (activeTasks)
+//   { kind:'manual', build }     → terminar un registro manual "ya terminé"
+let pendingComplete = null;
 
-function promptNotionLinkThenSync(task) {
-  pendingLinkTask = task;
-  document.getElementById('complete-link-task-name').textContent = `"${task.name}"`;
+function requireNotionLink(kind, extra, taskName) {
+  pendingComplete = { kind, ...extra };
+  document.getElementById('complete-link-task-name').textContent = `"${taskName}"`;
   document.getElementById('complete-link-input').value = '';
+  document.getElementById('complete-link-error').style.display = 'none';
   document.getElementById('complete-link-overlay').style.display = 'flex';
 }
 
-// "Omitir" — la tarea ya está completada; esto solo decide que se guarde
-// en el Sheet sin link.
+// "Cancelar" — NO completa la tarea. Si era un timer activo, lo deja tal
+// cual estaba (reanuda el conteo, ver stopTask/resumeActiveAfterLinkCancel).
 function closeCompleteLinkModal() {
   document.getElementById('complete-link-overlay').style.display = 'none';
-  if (pendingLinkTask) {
-    syncTaskToSheet(pendingLinkTask);
-    pendingLinkTask = null;
+  if (pendingComplete && pendingComplete.kind === 'active') {
+    resumeActiveAfterLinkCancel(pendingComplete.id);
   }
+  pendingComplete = null;
 }
 
 function confirmCompleteWithLink() {
-  if (!pendingLinkTask) return;
+  if (!pendingComplete) return;
   const link = document.getElementById('complete-link-input').value.trim();
-  // `pendingLinkTask` es el mismo objeto que ya vive en `tasks` (mismo id),
-  // así que esto también actualiza el link visible en la lista en pantalla.
-  pendingLinkTask.notionLink = link;
+  if (!link) {
+    document.getElementById('complete-link-error').style.display = 'block';
+    showToast('🔗 Pega el link de Notion para poder completar la tarea', 'warning');
+    return;
+  }
+  document.getElementById('complete-link-overlay').style.display = 'none';
+  const pending = pendingComplete;
+  pendingComplete = null;
+
+  if (pending.kind === 'active') {
+    finalizeActiveTask(pending.id, link);
+  } else if (pending.kind === 'manual') {
+    const task = pending.build(link);
+    tasks.push(task);
+    lsSaveTasks();
+    renderTasks();
+    syncTaskToSheet(task);
+  }
+}
+
+// El timer se pausa en el momento de pedir el link (ver stopTask) para que
+// el tiempo no siga corriendo mientras se busca/pega el link. Si se
+// cancela, se reanuda exactamente donde quedó.
+function resumeActiveAfterLinkCancel(id) {
+  const at = activeTasks.find(a => a.id === id);
+  if (!at) return;
+  at.paused = false;
+  at.startedAt = Date.now();
+  saveActiveTasks();
+  renderActiveTimers();
+}
+
+function finalizeActiveTask(id, link) {
+  const idx = activeTasks.findIndex(at => at.id === id);
+  if (idx === -1) return;
+  const at = activeTasks[idx];
+  const task = { id:Date.now(), ...at.task, seconds:at.seconds, status:'Completada', endTime:new Date().toISOString(), notionLink: link };
+  tasks.push(task);
   lsSaveTasks();
   renderTasks();
-  document.getElementById('complete-link-overlay').style.display = 'none';
-  syncTaskToSheet(pendingLinkTask);
-  pendingLinkTask = null;
+  syncTaskToSheet(task);
+  activeTasks.splice(idx, 1);
+  saveActiveTasks();
+  renderActiveTimers();
 }
 
 // ── RESUMEN DEL DÍA (personal y de equipo) ──────────────────────────
@@ -2910,19 +2958,28 @@ function joinConY(names) {
 function buildPersonalSummaryText(monthRows) {
   const name = selDesigner || 'Sin diseñador';
   const todayDate = new Date().toLocaleDateString('es-PA');
-  const rows = (monthRows || []).filter(r => r[0] === todayDate && r[1] === name);
+  const allTodayRows = (monthRows || []).filter(r => r[0] === todayDate);
+  const rows = allTodayRows.filter(r => r[1] === name);
   const fecha = capFirst(new Date().toLocaleDateString('es-PA', { weekday:'long', day:'numeric', month:'long' }));
 
   if (!rows.length) {
     return `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\nTodavía no tienes tareas completadas hoy en el Sheet.`;
   }
 
+  // Entregables Novey — regla fija: cada arte nuevo cuenta como 1 entregable;
+  // el carrusel es la única excepción y cuenta como 1 solo entregable (no por
+  // cada pieza que lo compone). Ya lo maneja rowPieceCount/piezasDeRowsQue.
+  const noveyRowsMine = rows.filter(r => r[3] === 'Novey');
+  const noveyRowsTeam = allTodayRows.filter(r => r[3] === 'Novey');
+  const entregablesMios = piezasDeRowsQue(noveyRowsMine, isNewRow);
+  const entregablesEquipo = piezasDeRowsQue(noveyRowsTeam, isNewRow);
+
   const nuevos = piezasDeRowsQue(rows, isNewRow);
   const ajustes = piezasDeRowsQue(rows, isAjusteRow);
   const piezas = piezasDeRows(rows);
   const total = rows.length;
   const atpMin = atpMinutesOf(rows);
-  let out = `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Tareas: ${total}*`;
+  let out = `📊 *Resumen del día — ${fecha}*\n\n👤 *${name}*\n📦 Entregables Novey — Tú: ${entregablesMios} · Equipo: ${entregablesEquipo}\n🆕 Artes nuevos: ${nuevos}\n🔧 Ajustes: ${ajustes}\n🎨 Piezas totales: ${piezas}\n✅ *Tareas: ${total}*`;
   if (atpMin > 0) out += `\n🔎 Además: Revisión de grilla con Answer The Public (${atpMin} min)`;
   return out;
 }
@@ -3104,15 +3161,30 @@ function stopTask(id, completed) {
   if (idx === -1) return;
   const at = activeTasks[idx];
   if (completed) {
-    const task = { id:Date.now(), ...at.task, seconds:at.seconds, status:'Completada', endTime:new Date().toISOString() };
-    tasks.push(task);
-    lsSaveTasks();
-    renderTasks();
-    // La tarea ya quedó completada arriba; "No Diseño" se sincroniza directo
-    // (no genera pieza que revisar en Notion), el resto pregunta el link
-    // después, sin bloquear la finalización de la tarea.
-    if (task.category === 'No Diseño') syncTaskToSheet(task);
-    else promptNotionLinkThenSync(task);
+    // "No Diseño" (reuniones, Emplifi, grillas, ATP) no genera una pieza que
+    // revisar en Notion: se completa directo, sin pedir link.
+    if (at.task.category === 'No Diseño') {
+      const task = { id:Date.now(), ...at.task, seconds:at.seconds, status:'Completada', endTime:new Date().toISOString() };
+      tasks.push(task);
+      lsSaveTasks();
+      renderTasks();
+      syncTaskToSheet(task);
+      activeTasks.splice(idx, 1);
+      saveActiveTasks();
+      renderActiveTimers();
+      return;
+    }
+    // Tarea de diseño: el link de Notion es obligatorio para completar.
+    // Se pausa el timer (no se borra de activeTasks) y se pide el link;
+    // si se cancela, se reanuda exactamente donde quedó (ver
+    // resumeActiveAfterLinkCancel). Si se confirma con link, recién ahí
+    // se finaliza (finalizeActiveTask).
+    at.paused = true;
+    at.pausedSeconds = at.seconds;
+    saveActiveTasks();
+    renderActiveTimers();
+    requireNotionLink('active', { id }, at.task.name);
+    return;
   }
   activeTasks.splice(idx, 1);
   saveActiveTasks();
