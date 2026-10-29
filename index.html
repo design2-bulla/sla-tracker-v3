@@ -567,6 +567,8 @@
               <span class="cat-pill" data-val="Redes Sociales" onclick="selectCat('Redes Sociales',this)">📱 Redes Sociales</span>
               <span class="cat-pill" data-val="Proyecto" onclick="selectCat('Proyecto',this)">📁 Proyecto</span>
               <span class="cat-pill" data-val="Diseño Gráfico General" onclick="selectCat('Diseño Gráfico General',this)">🎨 Diseño Gráfico General</span>
+              <span class="cat-pill" data-val="Material Impreso" onclick="selectCat('Material Impreso',this)">🖨️ Material Impreso</span>
+              <span class="cat-pill" data-val="Pauta" onclick="selectCat('Pauta',this)">📣 Pauta</span>
             </div>
           </div>
         </div>
@@ -2183,7 +2185,7 @@ async function ensureDaySeparator() {
         body: JSON.stringify({ requests: [
           // Rosa for separator row
           { repeatCell: {
-            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex, endRowIndex: sepRowIndex + 1, startColumnIndex: 0, endColumnIndex: 16 },
+            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex, endRowIndex: sepRowIndex + 1, startColumnIndex: 0, endColumnIndex: 17 },
             cell: { userEnteredFormat: {
               backgroundColor: { red: 0.890, green: 0.208, blue: 0.463 },
               textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 11 },
@@ -2193,7 +2195,7 @@ async function ensureDaySeparator() {
           }},
           // Morado claro for headers row (right below separator)
           { repeatCell: {
-            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex + 1, endRowIndex: sepRowIndex + 2, startColumnIndex: 0, endColumnIndex: 16 },
+            range: { sheetId: sheetTab.properties.sheetId, startRowIndex: sepRowIndex + 1, endRowIndex: sepRowIndex + 2, startColumnIndex: 0, endColumnIndex: 17 },
             cell: { userEnteredFormat: {
               backgroundColor: { red: 0.545, green: 0.039, blue: 0.549 },
               textFormat: { foregroundColor: { red:1, green:1, blue:1 }, bold: true, fontSize: 10 },
@@ -2758,12 +2760,17 @@ function confirmManualEntry() {
     const endDate = new Date(now); endDate.setHours(eh, em, 0, 0);
     if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
 
+    // Se congelan los valores del formulario AHORA: el builder se ejecuta
+    // después (al confirmar el link), cuando el formulario ya se limpió.
+    const mDesigner = selDesigner, mClient = selClient||'—', mType = selTypes.length?selTypes.join(', '):'—';
+    const mQty = selQty, mCategory = selCategory||'—';
+    const mRound = ((isAjuste || isEmplifi) && selClient==='Novey')?selAjusteRound:null;
     const buildManualTask = (notionLink) => ({
       id: Date.now(),
-      name, designer: selDesigner, client: selClient||'—',
-      type: selTypes.length?selTypes.join(', '):'—',
-      qty: selQty, category: selCategory||'—',
-      isAjuste, isEmplifi, ajusteRound:((isAjuste || isEmplifi) && selClient==='Novey')?selAjusteRound:null,
+      name, designer: mDesigner, client: mClient,
+      type: mType,
+      qty: mQty, category: mCategory,
+      isAjuste, isEmplifi, ajusteRound: mRound,
       seconds: mins * 60,
       status: 'Completada',
       startTime: startDate.toISOString(),
@@ -2775,7 +2782,7 @@ function confirmManualEntry() {
     // "No Diseño" no genera pieza que revisar en Notion: se registra directo.
     // El resto, igual que al completar un timer activo, exige el link de
     // Notion antes de quedar registrada (no se guarda hasta confirmarlo).
-    if (selCategory === 'No Diseño') {
+    if (mCategory === 'No Diseño') {
       const task = buildManualTask();
       tasks.push(task);
       lsSaveTasks();
